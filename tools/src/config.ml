@@ -2,6 +2,8 @@ type local_configuration = {
   api_url : string ;
   mock_api : string ;
   api_key : string ;
+  max_connections : int ;
+  request_per_second : int ;
 } deriving (Json_ext)
 
 

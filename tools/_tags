@@ -1,1 +1,1 @@
-<src/*>: thread, syntax(camlp4o), package(deriving-ocsigen,deriving-ocsigen.syntax,lwt,lwt.syntax,yojson,json_ext.server,json_ext.server.syntax)
+<src/*>: thread, syntax(camlp4o), package(deriving-ocsigen,deriving-ocsigen.syntax,ocsigenserver,lwt,lwt.syntax,yojson,json_ext.server,json_ext.server.syntax)
