@@ -1,9 +1,16 @@
+type database = {
+  ip: string ;
+  name: string ;
+  collection: string ;
+} deriving (Json_ext)
+
 type local_configuration = {
   api_url : string ;
   mock_api : string ;
   api_key : string ;
   max_connections : int ;
   request_per_second : int ;
+  database: database ;
 } deriving (Json_ext)
 
 

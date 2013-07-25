@@ -42,8 +42,8 @@ let _ =
               else x::acc
             in
             aux acc pkg) [] l
-        in
-        Echo (init,(env ("%(name)_%(suffix)"-.-ext)))
+       in
+       Echo (init,(env ("%(name)_%(suffix)"-.-ext)))
       )
   in
   List.iter derive_file_list [ "mlpack"; "mllib" ]
@@ -213,49 +213,32 @@ let _ =
       copy_rule "mlpack to mllib" "chip8_server.mlpack" "chip8_server.mllib"
     | After_rules ->
 
-      copy_rule "tools lib" "src/api_wrapper.native" "src/setup_api";
+      copy_rule_with_header "src/%(name).ml" "src/server/%(name:<*>).ml" ;
+      copy_rule_with_header "src/%(name).ml" "src/client/%(name:<*>).ml" ;
+      copy_rule_with_header "src/%(name).ml" "src/type_mli/%(name:<*>).ml" ;
 
-      (* copy_rule_with_header "src/%(name).ml" "src/server/%(name:<*>).ml" ; *)
-      (* copy_rule_with_header "src/%(name).ml" "src/client/%(name:<*>).ml" ; *)
-      (* copy_rule_with_header "src/%(name).ml" "src/type_mli/%(name:<*>).ml" ; *)
-
-      (* copy_rule_with_header "utils/lib/%(name).ml" "utils/lib/server/%(name:<*>).ml" ; *)
-      (* copy_rule_with_header "utils/lib/%(name).ml" "utils/lib/client/%(name:<*>).ml" ; *)
+      copy_rule_with_header "utils/lib/%(name).ml" "utils/lib/server/%(name:<*>).ml" ;
+      copy_rule_with_header "utils/lib/%(name).ml" "utils/lib/client/%(name:<*>).ml" ;
 
       (* add syntax and type_mli *)
-      (* List.iter ( *)
-      (*   fun t -> *)
-      (*     flag_and_dep [ "ocaml"; t; "with_lib_syntax"] (S [ (A "-ppopt"); P "utils/pa_syntax.cma"]) ; *)
-      (*     flag [ "ocaml"; t; "with_lib_utils_server" ] (S [ (A "-I"); P "utils/lib/server"]) ; *)
-      (*     flag [ "ocaml"; t; "with_lib_utils_client" ] (S [ (A "-I"); P "utils/lib/client"]) ; *)
+      List.iter (
+        fun t ->
+          flag_and_dep [ "ocaml"; t; "with_lib_syntax"] (S [ (A "-ppopt"); P "utils/pa_syntax.cma"]) ;
+          flag [ "ocaml"; t; "with_lib_utils_server" ] (S [ (A "-I"); P "utils/lib/server"]) ;
+          flag [ "ocaml"; t; "with_lib_utils_client" ] (S [ (A "-I"); P "utils/lib/client"]) ;
 
-      (*     dep [ "ocaml"; t; "with_lib_utils_server"] [ "utils/utils_lib_server.cma" ] ; *)
-      (*     dep [ "ocaml"; t; "with_lib_utils_client"] [ "utils/utils_lib_client.cma" ] ; *)
-      (* ) [ "infer_interface"; "ocamldep"; "compile" ] ; *)
+          dep [ "ocaml"; t; "with_lib_utils_server"] [ "utils/utils_lib_server.cma" ] ;
+          dep [ "ocaml"; t; "with_lib_utils_client"] [ "utils/utils_lib_client.cma" ] ;
+      ) [ "infer_interface"; "ocamldep"; "compile" ] ;
 
-      (* flag_and_dep ["camlp4o"; "compile"; "with_lib_syntax"] (P "utils/pa_syntax.cma"); *)
-      (* flag_and_dep ["ocaml"; "link"; "use_lib_utils" ] (P "utils/utils_lib_server.cma") ; *)
+      flag_and_dep ["camlp4o"; "compile"; "with_lib_syntax"] (P "utils/pa_syntax.cma");
+      flag_and_dep ["ocaml"; "link"; "use_lib_utils" ] (P "utils/utils_lib_server.cma") ;
 
-      (* flag [ "ocaml"; "infer_interface"; "thread" ] (S [ A "-thread" ]); *)
+      flag [ "ocaml"; "infer_interface"; "thread" ] (S [ A "-thread" ]);
 
-      (* flag [ "js_compile"; "use_lib_utils_client"] (S [ S [ A "-I"; P "utils/lib/client"; P "utils/utils_lib_client.cma"; ]; S [ A "-package" ; A "dom_type.client"]] ); *)
+      flag [ "js_compile"; "use_lib_utils_client"] (S [ S [ A "-I"; P "utils/lib/client"; P "utils/utils_lib_client.cma"; ]; S [ A "-package" ; A "dom_type.client"]] );
 
       ()
 
     | _ -> ()
   end
-
-
-(* open Ocamlbuild_plugin *)
-(* open Command *)
-
-(* let _ = Options.use_ocamlfind := true *)
-(* let _ = Options.make_links := false *)
-
-(* let _ = *)
-(*   dispatch begin function *)
-(*     | After_rules -> *)
-(*       copy_rule "tools lib" "src/api_wrapper.native" "src/setup_api" *)
-
-(*     | _ -> () *)
-(*   end *)
