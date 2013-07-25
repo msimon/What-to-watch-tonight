@@ -167,6 +167,8 @@ let load_movies config mongodb =
           Mongo.insert mongodb [ (Movie_api.Bson_utils_movie.to_bson m) ];
       ) !movie_poll;
 
+      movie_poll := [] ;
+
       let n =
         match !movie_poll with
           | h::_ -> 0
