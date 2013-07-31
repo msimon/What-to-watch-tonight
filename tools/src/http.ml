@@ -3,6 +3,9 @@ open Ocsigen_http_frame
 open Ocsigen_stream
 open Ocsigen_lib
 
+exception Incorrect_response
+exception Replay_request
+
 let generate_headers headers =
   List.fold_left (
     fun headers (label, value) ->
@@ -87,3 +90,68 @@ let post_string_raw ?https ?port ?(headers=[]) ~host ~uri ~content ?(content_typ
 let post_string_url ?headers ?content_type ~content url () =
   let (https, host, port, uri) = fragment_url url in
   post_string ?https ?port ?headers ~host ~uri ~content ?content_type ()
+
+
+let build_url =
+  let open Config in
+  let call_nb = ref 1 in
+  let first_time = ref None in
+  let retry_after = ref 0 in
+
+  let rec build_url_in ?(params=[]) config ~uri =
+    incr(call_nb);
+    let call_nb = !call_nb in
+
+    lwt _ =
+      match !first_time with
+        | None ->
+          first_time := Some (Unix.gettimeofday ());
+          Lwt.return_unit
+        | Some t ->
+          let t_ = Unix.gettimeofday () in
+
+          let n = call_nb / config.request_per_second in
+          let waiting_time = (float_of_int n) *. config.Config.sleep_time +. (float_of_int !retry_after) in
+
+          if (t_ -. t < waiting_time) then begin
+            Lwt_unix.sleep (waiting_time -. (t_ -. t))
+          end else Lwt.return_unit
+    in
+
+    let url = Printf.sprintf "%s%s?api_key=%s" config.mock_api uri config.api_key in
+    let headers = [
+      "Accept", "application/json"
+    ] in
+
+    let url =
+      List.fold_left (
+        fun s (k,v) ->
+          s ^ (Printf.sprintf "&%s=%s" k v)
+      ) url params
+    in
+
+    lwt s,h = get_url ~headers url () in
+
+    lwt s =
+      Ocsigen_http_frame.Http_header.(
+        match h.mode with
+          | Answer i when i = 200 || i = 304 -> Lwt.return s
+          | Answer i when i = 429 ->
+            let n = get_headers_value h (Http_headers.name "Retry-After") in
+            Printf.printf "retry-after : %s\n%!" n;
+            lwt _ = Lwt_unix.sleep (float_of_string n) in
+            lwt s = build_url_in ~params config ~uri in
+            retry_after := !retry_after + (((int_of_string n) + 1) / config.max_connections);
+            Lwt.return s
+          | Answer i when i = 404 ->
+            raise Not_found
+          | _ ->
+            Printf.printf "ir2: %d: %s\n%!" call_nb s;
+            raise Incorrect_response
+      )
+    in
+
+
+    Lwt.return s
+  in
+  build_url_in
