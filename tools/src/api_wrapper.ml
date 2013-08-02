@@ -40,6 +40,7 @@ let load_movies config mongodb action =
         Printf.printf "retry from 0 to %d\n%!" max_id ;
 
         Lwt.return (0,max_id)
+      | _ -> assert false
   in
 
   let thread_pool = Lwt_pool.create config.max_connections (fun _ -> Lwt.return_unit) in
@@ -87,13 +88,37 @@ let load_movies config mongodb action =
     threads;
   ]
 
+let load_genres config mongodb =
+  let mongodb = Mongo.change_collection mongodb "genres" in
+  lwt _ = Mongo.drop_collection mongodb in
+  lwt genres = Db.fetch_genres config in
+
+  Printf.printf "inserting %d genres\n%!" (List.length genres);
+
+  List.iter (
+    fun g ->
+      try
+        Lwt.async (fun _ -> Mongo.insert mongodb [ (Db.Genre_api.Bson_utils_genre.to_bson g) ]);
+      with exn ->
+        Printf.printf "err insert genres: %s || on %s\n%!" (Printexc.to_string exn) (Json_ext.to_string (Db.Genre_api.Json_ext_genre.to_json g))
+  ) genres;
+
+  Lwt.return_unit
+
 
 let run action =
   let config = Config.init () in
   lwt mongodb = Mongo.create config.database.ip config.database.port config.database.name config.database.collection in
 
   lwt md_conf = Db.fetch_moviedb_configuration config in
-  lwt _ = load_movies config mongodb action in
+  lwt _ =
+    match action with
+      | `Genres_only ->
+        load_genres config mongodb
+      | _ ->
+        lwt _ = load_genres config mongodb in
+        load_movies config mongodb action
+  in
 
   lwt _ = Mongo.destory mongodb in
   Lwt.return ()
@@ -101,7 +126,7 @@ let run action =
 let read_params () =
   if Array.length (Sys.argv) = 1 then begin
     Printf.printf "%s argument required" Sys.argv.(0);
-    Printf.printf "Usage:\n-rd : drop and reload all movies. Takes approx 2 days\n-c or -complete: load new movies into db\n-rf or -retry: try to reaload all missing id\n%!";
+    Printf.printf "Usage:\n-rd : drop and reload all movies. Takes approx 2 days\n-c or -complete: load new movies into db\n-rf or -retry: try to reaload all missing id\n-g or -genres: relaod only the genres list%!";
     exit 0
   end else if Array.length (Sys.argv) > 2 then begin
     Printf.printf "%s argument required" Sys.argv.(0);
@@ -112,6 +137,7 @@ let read_params () =
       | "-rd" -> `Reload
       | "-c" | "-complete" -> `Complete
       | "-retry" | "-r" -> `Retry
+      | "-genres" | "-g" -> `Genres_only
       | s ->
         Printf.printf "Unknow parameter %s\n%!" s;
         exit 0

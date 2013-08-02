@@ -22,6 +22,10 @@ module Genre_api = struct
     id: int ;
     name: string ;
   } deriving (Json_ext, Bson_ext)
+
+  type genre_list = {
+    genres : genre list;
+  } deriving (Json_ext, Bson_ext)
 end
 
 module Prod_api = struct
@@ -72,6 +76,7 @@ module Movie_api = struct
   } deriving (Json_ext, Bson_ext)
 end
 
+
 let fetch_moviedb_configuration config =
   lwt s = Http.build_url config ~uri:"/3/configuration" in
   Lwt.return (Json_ext_movidb_configuration.from_json (Json_ext.from_string s))
@@ -88,6 +93,10 @@ let fetch_movie config uid =
   let m = Movie_api.Json_ext_movie.from_json (Json_ext.from_string s) in
   Lwt.return m
 
+let fetch_genres config =
+  lwt s = Http.build_url config ~uri:"/3/genre/list" in
+  let g = Genre_api.Json_ext_genre_list.from_json (Json_ext.from_string s) in
+  Lwt.return g.Genre_api.genres
 
 let movie_pool = ref []
 let add_movie_to_pool m = movie_pool := m::!movie_pool
@@ -115,10 +124,9 @@ let insert_movie_async mongodb loop_time threads =
       fun s ->
         try
           let m = Movie_api.Json_ext_movie.from_json (Json_ext.from_string s) in
-          (* Printf.printf "Saving : %d\n%!" m.Movie_api.id; *)
           Lwt.async (fun _ -> Mongo.insert mongodb [ (Movie_api.Bson_utils_movie.to_bson m) ]);
         with exn ->
-          Printf.printf "err insert: %s || on %s\n%!" (Printexc.to_string exn) s
+          Printf.printf "err insert movie: %s || on %s\n%!" (Printexc.to_string exn) s
     ) !movie_pool;
 
     movie_pool := [] ;
