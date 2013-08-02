@@ -1,0 +1,5 @@
+<src/server/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.server,eliom.syntax.server,deriving-ocsigen,deriving-ocsigen.syntax,lwt.syntax,json_ext.server,json_ext.server.syntax,bson,bson.syntax)
+<src/client/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.client,eliom.syntax.client,lwt.syntax,json_ext.client,json_ext.client.syntax,bson.client,bson.client.syntax)
+
+<src/type_mli/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.server,eliom.syntax.type,lwt.syntax,deriving-ocsigen,deriving-ocsigen.syntax,json_ext.server,json_ext.server.syntax,bson,bson.syntax)
+<w2wt.js>: js_compile
