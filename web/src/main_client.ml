@@ -1,9 +1,3 @@
-let _ = {
-  User_type.uid = Uid.fresh_uid Uid.User ;
-  name = "test" ;
-  ratings = []
-}
-
 {client{
 
   open Eliom_content

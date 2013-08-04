@@ -1,8 +1,12 @@
-src/main
-src/main_client
-src/uid
-
 src/user_type
 src/movie_type
-src/genre_type
+src/gender_type
 src/rating_type
+
+src/config
+src/uid
+src/db
+
+
+src/main
+src/main_client

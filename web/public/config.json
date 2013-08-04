@@ -1,0 +1,11 @@
+{
+  database: {
+    ip: "127.0.0.1",
+    port: 27017,
+    name: "w2wt"
+  },
+  cache : {
+    cache_timer: 86400.0,
+    cache_size: 100000
+  }
+}
