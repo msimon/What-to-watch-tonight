@@ -9,7 +9,7 @@
   } deriving (Bson_ext)
 }}
 
-let collection = "rating"
+let collection = "ratings"
 
 let search uid =
   let uid = Uid.get_uid_value uid in

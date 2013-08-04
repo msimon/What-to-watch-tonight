@@ -3,13 +3,20 @@
 
   (* n size vector, n = # gender in our case *)
   type param = {
-    gender_uid : int ;
+    genres_uid : Uid.genre Uid.uid ;
     value : float ;
   } deriving (Bson_ext)
 
   type t = {
     uid: key ;
-    name: string ;
+    title: string ;
+    original_title : string option ;
+    overview : string option ;
+    popularity : float ;
+    poster_path : string option ;
+    release_date: string ;
+    tagline : string option ;
+    genres : Uid.genre Uid.uid list ;
     vector : param list ;
   } deriving (Bson_ext)
 }}

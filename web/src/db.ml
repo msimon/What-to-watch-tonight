@@ -86,5 +86,5 @@ end
 
 module User = Make (User_type)
 module Movie = Make (Movie_type)
-module Gender = Make (Gender_type)
+module Genre = Make (Genre_type)
 module Rating = Make (Rating_type)

@@ -1,6 +1,6 @@
 src/user_type
 src/movie_type
-src/gender_type
+src/genre_type
 src/rating_type
 
 src/config

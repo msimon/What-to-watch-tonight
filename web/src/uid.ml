@@ -2,13 +2,13 @@
   (* deriving need a type even if it is never used *)
   type user = User deriving (Bson_ext)
   type movie = Movie deriving (Bson_ext)
-  type gender = Gender deriving (Bson_ext)
+  type genre = Genre deriving (Bson_ext)
   type rating = Rating deriving (Bson_ext)
 
   type _ typ =
     | User : user typ
     | Movie : movie typ
-    | Gender : gender typ
+    | Genre : genre typ
     | Rating : rating typ
 
   module type Uid =
@@ -45,7 +45,7 @@
             find_n_update 0
           | Movie ->
             find_n_update 1
-          | Gender ->
+          | Genre ->
             find_n_update 2
           | Rating ->
             find_n_update 3
