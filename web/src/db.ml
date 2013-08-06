@@ -17,7 +17,7 @@ sig
   type t deriving (Bson_ext)
 
   val find: t -> t Lwt.t
-  (* val query : Bson.t -> t list Lwt.t *)
+  val query : ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
   val insert: t -> unit Lwt.t
   val update: t -> unit Lwt.t
   val delete: t -> unit Lwt.t
@@ -43,17 +43,44 @@ struct
     let bson_search = M.search key in
 
     lwt r = Mongo_lwt.find_q_one mongo bson_search in
-    let r = List.nth (MongoReply.get_document_list r) 0 in
+    let d = List.nth (MongoReply.get_document_list r) 0 in
 
-    Lwt.return (Bson_utils_t.from_bson r)
-
+    Lwt.return (Bson_utils_t.from_bson d)
 
   let cache = Config.(new Cache.cache find_in_db ~timer:config.cache.cache_timer config.cache.cache_size)
 
   let find t =
     cache#find (M.key t)
 
-  (* let query bson_t = *)
+
+  let query ?limit ?(full=false) bson_t =
+    lwt mongo = Lazy.force mongo in
+    lwt r =
+      match limit with
+        | Some l -> Mongo_lwt.find_q_of_num mongo bson_t l
+        | None -> Mongo_lwt.find_q mongo bson_t
+    in
+
+    let fetch_one_batch ?(acc=[]) r =
+      let ds = MongoReply.get_document_list r in
+      List.fold_left (
+        fun acc d ->
+          (Bson_utils_t.from_bson d)::acc
+      ) acc ds
+    in
+
+    let rec fetch_all acc r =
+      if MongoReply.get_num_returned r = 0l then Lwt.return acc
+      else begin
+        let acc = fetch_one_batch ~acc r in
+        lwt r = Mongo_lwt.get_more mongo (MongoReply.get_cursor r) in
+        fetch_all acc r
+      end
+    in
+
+    if full then fetch_all [] r
+    else Lwt.return (fetch_one_batch r)
+
 
   let insert t =
     lwt mongo = Lazy.force mongo in
