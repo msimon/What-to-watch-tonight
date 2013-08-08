@@ -5,7 +5,7 @@
     uid: key ;
     user_uid: Uid.user Uid.uid;
     movie_uid: Uid.movie Uid.uid;
-    ratings: int ;
+    rating: int ;
   } deriving (Bson_ext)
 }}
 

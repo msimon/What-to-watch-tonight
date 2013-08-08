@@ -1,2 +1,59 @@
 Aug  1 20:51:29: main: Command pipe created
 Aug  1 20:51:30: main: Ocsigen has been launched (initialisations ok)
+Aug  7 16:02:32: main: Command pipe created
+Aug  7 16:05:30: main: Ocsigen has been launched (initialisations ok)
+Aug  7 17:40:49: main: Ocsigen has been launched (initialisations ok)
+Aug  7 17:42:05: main: Ocsigen has been launched (initialisations ok)
+Aug  7 17:44:23: main: Ocsigen has been launched (initialisations ok)
+Aug  7 17:45:53: main: Ocsigen has been launched (initialisations ok)
+Aug  7 17:48:43: main: Ocsigen has been launched (initialisations ok)
+Aug  7 17:51:36: main: Ocsigen has been launched (initialisations ok)
+Aug  7 17:55:44: main: Ocsigen has been launched (initialisations ok)
+Aug  7 17:55:46: main: --Ocsigen_http_client will give to server 23.21.221.34:80 a first probing period for pipelining.
+Aug  7 18:11:41: main: Ocsigen has been launched (initialisations ok)
+Aug  7 18:11:44: main: --Ocsigen_http_client will give to server 23.21.221.34:80 a first probing period for pipelining.
+Aug  7 18:14:10: main: Ocsigen has been launched (initialisations ok)
+Aug  7 18:14:13: main: --Ocsigen_http_client will give to server 54.225.133.55:80 a first probing period for pipelining.
+Aug  7 18:21:52: main: Ocsigen has been launched (initialisations ok)
+Aug  7 18:21:57: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 18:22:10: main: While talking to ::1: connection abruptly closed by peer (Unix.Unix_error(Unix.EPIPE, "write", ""))
+Aug  7 18:22:11: main: While talking to ::1: connection abruptly closed by peer (Unix.Unix_error(Unix.ECONNRESET, "write", ""))
+Aug  7 18:48:49: main: Ocsigen has been launched (initialisations ok)
+Aug  7 18:48:53: main: --Ocsigen_http_client will give to server 23.21.221.34:80 a first probing period for pipelining.
+Aug  7 18:49:44: main: Ocsigen has been launched (initialisations ok)
+Aug  7 18:49:46: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 18:50:40: main: Ocsigen has been launched (initialisations ok)
+Aug  7 18:50:42: main: --Ocsigen_http_client will give to server 23.21.221.34:80 a first probing period for pipelining.
+Aug  7 18:50:59: main: Ocsigen has been launched (initialisations ok)
+Aug  7 18:51:01: main: --Ocsigen_http_client will give to server 23.21.221.34:80 a first probing period for pipelining.
+Aug  7 19:03:20: main: Ocsigen has been launched (initialisations ok)
+Aug  7 19:03:25: main: --Ocsigen_http_client will give to server 54.225.133.55:80 a first probing period for pipelining.
+Aug  7 19:03:38: main: Ocsigen has been launched (initialisations ok)
+Aug  7 19:03:41: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 19:04:28: main: Ocsigen has been launched (initialisations ok)
+Aug  7 19:04:33: main: --Ocsigen_http_client will give to server 23.21.221.34:80 a first probing period for pipelining.
+Aug  7 19:05:11: main: Ocsigen has been launched (initialisations ok)
+Aug  7 19:05:14: main: --Ocsigen_http_client will give to server 54.225.133.55:80 a first probing period for pipelining.
+Aug  7 19:05:25: main: Ocsigen has been launched (initialisations ok)
+Aug  7 19:05:29: main: --Ocsigen_http_client will give to server 54.225.133.55:80 a first probing period for pipelining.
+Aug  7 22:38:55: main: Command pipe created
+Aug  7 22:38:55: main: Ocsigen has been launched (initialisations ok)
+Aug  7 22:39:01: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 22:40:50: main: Ocsigen has been launched (initialisations ok)
+Aug  7 22:40:54: main: --Ocsigen_http_client will give to server 23.21.221.34:80 a first probing period for pipelining.
+Aug  7 22:43:37: main: Ocsigen has been launched (initialisations ok)
+Aug  7 22:43:41: main: --Ocsigen_http_client will give to server 54.225.133.55:80 a first probing period for pipelining.
+Aug  7 23:14:06: main: Ocsigen has been launched (initialisations ok)
+Aug  7 23:14:16: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 23:14:47: main: Ocsigen has been launched (initialisations ok)
+Aug  7 23:14:53: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 23:15:22: main: Ocsigen has been launched (initialisations ok)
+Aug  7 23:15:25: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 23:19:26: main: Ocsigen has been launched (initialisations ok)
+Aug  7 23:19:31: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 23:20:16: main: Ocsigen has been launched (initialisations ok)
+Aug  7 23:20:19: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  7 23:20:40: main: Ocsigen has been launched (initialisations ok)
+Aug  7 23:20:44: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.
+Aug  8 05:21:20: main: Ocsigen has been launched (initialisations ok)
+Aug  8 05:21:25: main: --Ocsigen_http_client will give to server 50.19.219.119:80 a first probing period for pipelining.

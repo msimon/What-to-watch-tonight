@@ -11,20 +11,20 @@ sig
 
 end
 
+module type Make =
+  functor (M : M) ->
+  sig
+    type t = M.t deriving (Bson_ext)
+    type key = M.key
 
-module type Db =
-sig
-  type t deriving (Bson_ext)
-
-  val find: t -> t Lwt.t
-  val query : ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
-  val insert: t -> unit Lwt.t
-  val update: t -> unit Lwt.t
-  val delete: t -> unit Lwt.t
+    val find: key -> t Lwt.t
+    val query : ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
+    val insert: t -> unit Lwt.t
+    val update: t -> unit Lwt.t
+    val delete: t -> unit Lwt.t
 end
 
-
-module Make (M : M) : Db =
+module Make (M : M) =
 struct
 
   type t = M.t deriving (Bson_ext)
@@ -49,9 +49,8 @@ struct
 
   let cache = Config.(new Cache.cache find_in_db ~timer:config.cache.cache_timer config.cache.cache_size)
 
-  let find t =
-    cache#find (M.key t)
-
+  let find key =
+    cache#find key
 
   let query ?limit ?(full=false) bson_t =
     lwt mongo = Lazy.force mongo in
@@ -78,9 +77,12 @@ struct
       end
     in
 
-    if full then fetch_all [] r
-    else Lwt.return (fetch_one_batch r)
+    lwt l =
+      if full then fetch_all [] r
+      else Lwt.return (fetch_one_batch r)
+    in
 
+    Lwt.return (List.rev l)
 
   let insert t =
     lwt mongo = Lazy.force mongo in

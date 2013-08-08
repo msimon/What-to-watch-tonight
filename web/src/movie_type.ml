@@ -12,10 +12,11 @@
     title: string ;
     original_title : string option ;
     overview : string option ;
-    popularity : float ;
     poster_path : string option ;
     release_date: string ;
     tagline : string option ;
+    vote_average : float ;
+    vote_count : int ;
     genres : Uid.genre Uid.uid list ;
     vector : param list ;
   } deriving (Bson_ext)
