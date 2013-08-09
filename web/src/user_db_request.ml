@@ -1,5 +1,4 @@
 {shared{
-
   type user = {
     uid : User_type.key ;
     name : string ;
@@ -27,10 +26,10 @@ let facebook_sign_in (fb_id, access_token) =
       let u = {
         u with
           User_type.facebook = Some {
-              User_type.facebook_uid = fb_id ;
-              facebook_access_token = access_token ;
-              facebook_access_token_expire_on = expired_in ;
-            }
+          User_type.facebook_uid = fb_id ;
+          facebook_access_token = access_token ;
+          facebook_access_token_expire_on = expired_in ;
+        }
       } in
 
       lwt _ = Db.User.update u in

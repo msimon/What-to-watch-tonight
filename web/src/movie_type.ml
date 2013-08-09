@@ -29,3 +29,10 @@ let search uid =
   Bson.add_element "uid" (Bson.create_int64 (Int64.of_int uid)) Bson.empty
 
 let key t = t.uid
+
+let indexes () =
+  let uid = ("uid",[ Mongo_lwt.Unique true ]) in
+  let vote_average = ("vote_average",[]) in
+  let vote_count = ("vote_count",[]) in
+
+  [ uid; vote_average; vote_count ]

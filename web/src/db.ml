@@ -9,6 +9,8 @@ sig
   val search: key -> Bson.t
   val key: t -> key
 
+  val indexes: unit -> (string * (Mongo_lwt.index_option list)) list
+
 end
 
 module type Make =
@@ -39,6 +41,18 @@ struct
   let mongo = lazy (
     Balsa_config.(Mongo_lwt.create (get_string "db.ip") (get_int "db.port") (get_string "db.name")  M.collection)
   )
+
+  let _ =
+    let indexes = M.indexes () in
+    Lwt.async (
+      fun _ ->
+        lwt mongo = Lazy.force mongo in
+        Lwt_list.iter_p (
+          fun (name, options) ->
+            Mongo_lwt.ensure_simple_index ~options mongo name
+        ) indexes
+    )
+
 
   let find_in_db key =
     lwt mongo = Lazy.force mongo in

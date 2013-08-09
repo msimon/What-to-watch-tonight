@@ -29,3 +29,9 @@ let search uid =
   Bson.add_element "uid" (Bson.create_int64 (Int64.of_int uid)) Bson.empty
 
 let key t = t.uid
+
+let indexes () =
+  let uid = ("uid",[ Mongo_lwt.Unique true ]) in
+  let fb_uid = ("facebook.facebook_uid",[ Mongo_lwt.Unique true ]) in
+
+  [ uid; fb_uid ]
