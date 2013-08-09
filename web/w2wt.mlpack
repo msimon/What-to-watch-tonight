@@ -9,8 +9,6 @@ src/genre_db_request
 src/config
 src/uid
 src/db
-src/http
-src/debug
 
 src/main
 src/main_client

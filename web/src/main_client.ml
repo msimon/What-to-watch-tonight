@@ -47,7 +47,6 @@
   let init _ =
     let setup () =
       lwt _ = Config.init () in
-      let _ = Debug.init () in
       lwt d = main_dom () in
       Manip.appendToBody d;
       Lwt.return_unit

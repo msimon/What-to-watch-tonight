@@ -218,7 +218,7 @@ let _ =
       copy_rule_with_header "src/%(name).ml" "src/type_mli/%(name:<*>).ml" ;
 
       flag [ "ocaml"; "infer_interface"; "thread" ] (S [ A "-thread" ]);
-      flag [ "js_compile"] (S [S [ A "-package" ; A "json_ext.client"]; S [ A "-package" ; A "bson.client"]]; );
+      flag [ "js_compile"] (S [S [ A "-package" ; A "json_ext.client"]; S [ A "-package" ; A "bson.client"]; S [ A "-package" ; A "balsa.client"] ]; );
       ()
 
     | _ -> ()

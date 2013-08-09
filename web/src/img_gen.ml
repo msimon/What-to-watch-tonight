@@ -19,7 +19,7 @@
     img ~src ~alt ()
 
   let default_movie_img ?(alt="") () =
-    let c = Config.get_client () in
-    img ~src:c.Config.default_movie_img ~alt ()
+    let src = Balsa_config.get_string "default_movie_img" in
+    img ~src ~alt ()
 
 }}

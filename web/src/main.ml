@@ -22,9 +22,12 @@ let html_v =
     (body [])
 
 let main _ _ =
+  let configuration = Balsa_config.client_config () in
+
   let _ : unit client_value = {{
   Eliom_client.onload (
     fun _ ->
+      Balsa_config.from_list %configuration ;
       Main_client.init ()
   )
   }} in

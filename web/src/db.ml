@@ -34,9 +34,10 @@ struct
       type value = t
     end)
 
-  let config = Config.get ()
   (* mongo is Lwt.t lazy.t*)
-  let mongo = lazy (Config.(Mongo_lwt.create config.db.ip config.db.port config.db.name M.collection))
+  let mongo = lazy (
+    Balsa_config.(Mongo_lwt.create (get_string "db.ip") (get_int "db.port") (get_string "db.name")  M.collection)
+  )
 
   let find_in_db key =
     lwt mongo = Lazy.force mongo in
@@ -47,7 +48,7 @@ struct
 
     Lwt.return (Bson_utils_t.from_bson d)
 
-  let cache = Config.(new Cache.cache find_in_db ~timer:config.cache.cache_timer config.cache.cache_size)
+  let cache = Balsa_config.(new Cache.cache find_in_db ~timer:(get_float "cache.cache_timer") (get_int "cache.cache_size"))
 
   let find key =
     cache#find key
@@ -112,6 +113,8 @@ struct
 
 end
 
+let _ =
+  Balsa_config.init ()
 
 module User = Make (User_type)
 module Movie = Make (Movie_type)
