@@ -13,9 +13,14 @@
   "api.api_key": "1ec38a1fbf3f19ded30cccb862f0366f",
 
 
+  "fb.app-id": "158855507642102",
+  "fb.app-secret": "f428bf01e954e81349ba738979096d4f",
+
   "default_movie_img": "/img/default_movie_img.jpeg",
+  "facebook.perms" : "email,user_likes",
 
   "export-to-client" : [
-    "default_movie_img"
+    "default_movie_img",
+    "facebook.perms"
   ]
 }

@@ -5,6 +5,7 @@ src/rating_type
 
 src/movie_db_request
 src/genre_db_request
+src/user_db_request
 
 src/config
 src/uid
@@ -13,3 +14,4 @@ src/db
 src/main
 src/main_client
 src/img_gen
+src/connection

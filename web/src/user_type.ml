@@ -7,10 +7,17 @@
     value : float ;
   } deriving (Bson_ext)
 
+  type facebook = {
+    facebook_uid : string ;
+    facebook_access_token : string ;
+    facebook_access_token_expire_on : int ;
+  } deriving (Bson_ext)
+
   type t = {
     uid: key ;
     name: string ;
     ratings: Uid.rating Uid.uid list ;
+    facebook : facebook option ;
     vector : param list ;
   } deriving (Bson_ext)
 }}

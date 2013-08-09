@@ -18,6 +18,7 @@ module type Make =
     type key = M.key
 
     val find: key -> t Lwt.t
+    val query_one : Bson.t -> t option Lwt.t
     val query : ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
     val insert: t -> unit Lwt.t
     val update: t -> unit Lwt.t
@@ -52,6 +53,15 @@ struct
 
   let find key =
     cache#find key
+
+  let query_one bson_t =
+    lwt mongo = Lazy.force mongo in
+    lwt r = Mongo_lwt.find_q_one mongo bson_t in
+
+    match MongoReply.get_document_list r with
+      | [ ] -> Lwt.return_none
+      | h::_ -> Lwt.return (Some (Bson_utils_t.from_bson h))
+
 
   let query ?limit ?(full=false) bson_t =
     lwt mongo = Lazy.force mongo in
