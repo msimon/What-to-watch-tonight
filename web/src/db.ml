@@ -3,8 +3,11 @@ sig
 
   type t deriving (Bson_ext)
   type key deriving (Bson_ext)
+  type uid_typ
 
   val collection : string
+  val uid_field : string
+  val uid_typ: uid_typ Uid.typ
 
   val search: key -> Bson.t
   val key: t -> key
@@ -42,15 +45,40 @@ struct
     Balsa_config.(Mongo_lwt.create (get_string "db.ip") (get_int "db.port") (get_string "db.name")  M.collection)
   )
 
+  let ready,set_ready = Lwt.task ()
+
   let _ =
     let indexes = M.indexes () in
     Lwt.async (
       fun _ ->
         lwt mongo = Lazy.force mongo in
-        Lwt_list.iter_p (
-          fun (name, options) ->
-            Mongo_lwt.ensure_simple_index ~options mongo name
-        ) indexes
+
+        (* get the last uid, and set it in Uid.uid*)
+
+        let q = MongoMetaOp.orderBy (Bson.add_element M.uid_field (Bson.create_int32 (-1l)) Bson.empty) Bson.empty in
+        let s = Bson.add_element M.uid_field (Bson.create_int32 1l) Bson.empty in
+
+        lwt r = Mongo_lwt.find_q_s_one mongo q s in
+
+        let n = match MongoReply.get_document_list r with
+          | [] -> 1
+          | h::_ ->
+            let n = Bson.get_int64 (Bson.get_element M.uid_field h) in
+            (Int64.to_int n) + 1
+        in
+        Uid.set_uid M.uid_typ n ;
+
+        (* add index *)
+        lwt _ =
+          Lwt_list.iter_p (
+            fun (name, options) ->
+              Mongo_lwt.ensure_simple_index ~options mongo name
+          ) indexes;
+        in
+
+        (* notify that this collection is ready *)
+        Lwt.wakeup set_ready ();
+        Lwt.return_unit
     )
 
 
@@ -109,7 +137,10 @@ struct
 
     Lwt.return (List.rev l)
 
+  (* insert/update/delete must wait for the db to be ready *)
+
   let insert t =
+    lwt _ = ready in
     lwt mongo = Lazy.force mongo in
     lwt _ = Mongo_lwt.insert mongo [ Bson_utils_t.to_bson t ] in
 
@@ -119,6 +150,7 @@ struct
 
 
   let update t =
+    lwt _ = ready in
     lwt mongo = Lazy.force mongo in
     lwt _ = Mongo_lwt.update_one mongo ((M.search (M.key t)),(Bson_utils_t.to_bson t)) in
 
@@ -128,6 +160,7 @@ struct
     Lwt.return_unit
 
   let delete t =
+    lwt _ = ready in
     lwt mongo = Lazy.force mongo in
     lwt _ = Mongo_lwt.delete_one mongo (M.search (M.key t)) in
 

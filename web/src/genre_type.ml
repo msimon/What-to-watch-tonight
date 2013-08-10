@@ -8,6 +8,9 @@
 }}
 
 let collection = "genres"
+let uid_field = "uid"
+type uid_typ = Uid.genre
+let uid_typ = Uid.Genre
 
 let search uid =
   let uid = Uid.get_uid_value uid in

@@ -16,7 +16,8 @@
     type 'a uid deriving (Bson_ext)
 
     val fresh_uid : 't typ -> 't uid
-    val get_uid_value : 'a uid -> int
+    val set_uid : 't typ -> unit
+    val get_uid_value : 'a uid -> int -> unit
 
   end
 
@@ -49,8 +50,33 @@
             find_n_update 2
           | Rating ->
             find_n_update 3
-  end
 
+    let set_uid : type t. t typ -> int -> unit =
+      fun t v ->
+        let find_n_update ty =
+          try
+            let n = Hashtbl.find uid_htbl ty in
+            if (n <> 1) then begin
+              Balsa_log.error "Uid.uid has already been set" ;
+              failwith "Uid.uid has already been set"
+            end else
+              Hashtbl.replace uid_htbl ty v
+          with Not_found ->
+            Hashtbl.add uid_htbl ty v
+        in
+
+      match t with
+        | User ->
+          find_n_update 0
+        | Movie ->
+          find_n_update 1
+        | Genre ->
+          find_n_update 2
+        | Rating ->
+          find_n_update 3
+
+
+  end
 
 
   type 'a uid = 'a Uid.uid deriving (Bson_ext)
@@ -58,3 +84,4 @@
 
 let get_uid_value = Uid.get_uid_value
 let fresh_uid = Uid.fresh_uid
+let set_uid = Uid.set_uid

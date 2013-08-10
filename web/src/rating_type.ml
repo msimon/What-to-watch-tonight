@@ -10,6 +10,9 @@
 }}
 
 let collection = "ratings"
+let uid_field = "uid"
+type uid_typ = Uid.rating
+let uid_typ = Uid.Rating
 
 let search uid =
   let uid = Uid.get_uid_value uid in

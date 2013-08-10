@@ -13,6 +13,8 @@
   open Html5
   open D
 
+  open Balsa_react
+
   let main_dom () =
     lwt movies = %most_popular_movie () in
 
@@ -36,7 +38,19 @@
     in
 
     let d =
+      let connected = R.node (
+          S.map (fun s ->
+              match s with
+                | None -> p [ pcdata "not connected" ]
+                | Some u ->
+                  p [ pcdata (Printf.sprintf "Connected as %s" u.User_db_request.name) ]
+          ) Connection.connected
+        )
+      in
+
       div [
+        button ~button_type:`Button ~a:[ a_onclick (fun _ -> Lwt.async (fun _ -> Connection.facebook_connect ()); false) ] [ pcdata "facebook_connect" ];
+        connected ;
         h1 [ pcdata "100 most popular movie" ] ;
         div movies_dom
       ]
@@ -47,8 +61,18 @@
   let init _ =
     let setup () =
       lwt _ = Config.init () in
+      (* facebook may not need to be sync, remove async if problem occured *)
+      Lwt.async (fun _ ->
+          Balsa_facebook.load_facebook_sdk (Balsa_config.get_string "fb.app-id")
+        );
+
+      (* Set up the first dom, to remove when Path.ml ready *)
       lwt d = main_dom () in
       Manip.appendToBody d;
+
+      (* Check if session value should be update *)
+      lwt _ = Connection.check () in
+
       Lwt.return_unit
     in
 

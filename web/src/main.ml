@@ -23,10 +23,12 @@ let html_v =
 
 let main _ _ =
   let configuration = Balsa_config.client_config () in
+  lwt s = Connection.get_session () in
 
   let _ : unit client_value = {{
   Eliom_client.onload (
     fun _ ->
+      Connection.connect %s;
       Balsa_config.from_list %configuration ;
       Main_client.init ()
   )

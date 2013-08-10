@@ -66,9 +66,16 @@ module User_w2wt = struct
     value : float ;
   } deriving (Bson_ext)
 
+  type facebook = {
+    facebook_uid : string ;
+    facebook_access_token : string ;
+    facebook_access_token_expire_on : int ;
+  } deriving (Bson_ext)
+
   type user = {
     uid : Uid.user Uid.uid ;
     name: string ;
+    facebook : facebook option ;
     ratings: Uid.rating Uid.uid list ;
     vector : param list ;
   } deriving (Bson_ext)
@@ -224,6 +231,7 @@ let user config =
   let moviedb_user = {
     User_w2wt.uid = Uid.fresh_uid Uid.User ;
     name = "themoviedb" ;
+    facebook = None ;
     ratings = [] ;
     vector = [] ;
   } in

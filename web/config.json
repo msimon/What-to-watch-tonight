@@ -22,6 +22,7 @@
 
   "export-to-client" : [
     "default_movie_img",
+    "fb.app-id",
     "facebook.perms"
   ]
 }

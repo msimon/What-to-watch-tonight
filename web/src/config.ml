@@ -4,7 +4,7 @@ exception Incorrect_response
   let _ =
     Lwt.async_exception_hook := (
       fun exn ->
-        Printf.printf "Async exp: %s\n%!" (Printexc.to_string exn)
+        Balsa_log.warning "Error async: %s" (Printexc.to_string exn)
     )
 }}
 

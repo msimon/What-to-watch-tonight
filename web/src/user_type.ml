@@ -23,6 +23,9 @@
 }}
 
 let collection = "users"
+let uid_field = "uid"
+type uid_typ = Uid.user
+let uid_typ = Uid.User
 
 let search uid =
   let uid = Uid.get_uid_value uid in

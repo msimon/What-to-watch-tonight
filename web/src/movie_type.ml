@@ -23,6 +23,9 @@
 }}
 
 let collection = "movies"
+let uid_field = "uid"
+type uid_typ = Uid.movie
+let uid_typ = Uid.Movie
 
 let search uid =
   let uid = Uid.get_uid_value uid in

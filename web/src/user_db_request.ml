@@ -23,6 +23,7 @@ let facebook_sign_in (fb_id, access_token) =
 
   match u with
     | Some u ->
+      (* update the access token if the user already exist*)
       let u = {
         u with
           User_type.facebook = Some {
@@ -37,7 +38,7 @@ let facebook_sign_in (fb_id, access_token) =
       Lwt.return (user_to_client u)
 
     | None ->
-      (* creating the user *)
+      (* creating the user if it doesn't exist *)
       lwt fb_user = Balsa_facebook.get_user ~access_token fb_id in
       let u = {
         User_type.uid = Uid.fresh_uid Uid.User ;
