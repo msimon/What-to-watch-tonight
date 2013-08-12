@@ -28,6 +28,9 @@ module type Make =
     val insert: t -> unit Lwt.t
     val update: t -> unit Lwt.t
     val delete: t -> unit Lwt.t
+
+    val find_and_update: key -> (t -> t) -> unit Lwt.t
+
 end
 
 module Make (M : M) =
@@ -148,7 +151,6 @@ struct
 
     Lwt.return_unit
 
-
   let update t =
     lwt _ = ready in
     lwt mongo = Lazy.force mongo in
@@ -167,6 +169,28 @@ struct
     cache#remove (M.key t) ;
 
     Lwt.return_unit
+
+
+  (* This function assure that the data in DB will not be modify by another thread,
+     between the find and the update
+  *)
+  let find_and_update =
+    let mutex = Lwt_mutex.create () in
+    let finalize () =
+      Lwt_mutex.unlock mutex;
+      Lwt.return_unit
+    in
+    (fun key update_fun ->
+       lwt _ = Lwt_mutex.lock mutex in
+       lwt d = find key in
+       try_lwt
+         let d = update_fun d in
+         lwt _ = update d in
+         finalize ()
+       with _ ->
+         finalize ()
+    )
+
 
 end
 

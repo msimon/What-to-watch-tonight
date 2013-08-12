@@ -7,12 +7,33 @@
 
 }}
 
-let user_to_client u =
-  {
-    uid = u.User_type.uid ;
-    name = u.User_type.name ;
-    facebook = u.User_type.facebook ;
-  }
+{client{
+  module M =
+  struct
+    type client_t = user
+  end
+}}
+
+module M =
+struct
+  type db_t = User_type.t
+  type uid = User_type.key
+  type client_t = user
+
+  let to_client u =
+    Lwt.return ({
+        uid = u.User_type.uid ;
+        name = u.User_type.name ;
+        facebook = u.User_type.facebook ;
+      })
+
+  let find = Db.User.find
+
+end
+
+module DB_r = Db_request.Make (M)
+include DB_r
+
 
 let facebook_sign_in (fb_id, access_token) =
   lwt access_token, expired_in = Balsa_facebook.extended_access_token access_token in
@@ -35,7 +56,7 @@ let facebook_sign_in (fb_id, access_token) =
 
       lwt _ = Db.User.update u in
 
-      Lwt.return (user_to_client u)
+      to_client u
 
     | None ->
       (* creating the user if it doesn't exist *)
@@ -54,7 +75,7 @@ let facebook_sign_in (fb_id, access_token) =
 
       lwt _ = Db.User.insert u in
 
-      Lwt.return (user_to_client u)
+      to_client u
 
 
 let sign_out () = ()

@@ -28,7 +28,7 @@ type uid_typ = Uid.user
 let uid_typ = Uid.User
 
 let search uid =
-  let uid = Uid.get_uid_value uid in
+  let uid = Uid.get_value uid in
   Bson.add_element "uid" (Bson.create_int64 (Int64.of_int uid)) Bson.empty
 
 let key t = t.uid

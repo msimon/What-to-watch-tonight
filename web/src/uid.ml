@@ -15,9 +15,10 @@
   sig
     type 'a uid deriving (Bson_ext)
 
+    val get_value : 'a uid -> int -> unit
+    val unsaf_uid : int -> 'a uid
     val fresh_uid : 't typ -> 't uid
     val set_uid : 't typ -> unit
-    val get_uid_value : 'a uid -> int -> unit
 
   end
 
@@ -27,7 +28,8 @@
 
     let uid_htbl = Hashtbl.create 4
 
-    let get_uid_value uid = uid
+    let get_value uid = uid
+    let unsafe_uid uid = uid
 
     let fresh_uid : type t. t typ -> t uid =
       fun t ->
@@ -80,8 +82,11 @@
 
 
   type 'a uid = 'a Uid.uid deriving (Bson_ext)
+
+  let get_value = Uid.get_value
+  let unsafe_uid = Uid.unsafe_uid
 }}
 
-let get_uid_value = Uid.get_uid_value
+
 let fresh_uid = Uid.fresh_uid
 let set_uid = Uid.set_uid

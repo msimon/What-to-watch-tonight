@@ -6,6 +6,11 @@
   let set_session s = Eliom_reference.set session s
   let remove_session () = Eliom_reference.unset session
 
+  let get_uid () =
+    Balsa_option.map (
+      fun u -> u.User_db_request.uid
+    )
+
   let check =
     server_function Json.t<unit> (
       fun _ ->
@@ -13,7 +18,7 @@
           | Some u ->
             (* Search in db and compare db value with session value *)
             lwt db_u = Db.User.find u.User_db_request.uid in
-            let db_u = User_db_request.user_to_client db_u in
+            lwt db_u = User_db_request.to_client db_u in
             if u <> db_u then begin
               lwt _ = set_session (Some db_u) in
               Lwt.return (Some db_u)

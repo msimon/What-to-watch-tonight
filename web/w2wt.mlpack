@@ -12,6 +12,13 @@ src/uid
 src/db
 
 src/main
+src/db_request
+
 src/main_client
 src/img_gen
 src/connection
+src/path
+src/page
+
+src/page_main
+src/page_movie

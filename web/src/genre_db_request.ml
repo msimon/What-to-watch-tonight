@@ -5,18 +5,29 @@
   }
 }}
 
-let genre_to_client g =
-  Lwt.return ({
-    uid = g.Genre_type.uid ;
-    name = g.Genre_type.name ;
-  })
+{client{
 
-let genre_list_to_client l =
-  Lwt_list.map_s genre_to_client l
+  module M =
+    struct
+      type client_t = genre
+    end
 
-let genre_of_uid uid =
-  lwt g = Db.Genre.find uid in
-  genre_to_client g
+}}
 
-let genre_list_of_uid uids =
-  Lwt_list.map_s genre_of_uid uids
+module M =
+struct
+  type db_t = Genre_type.t
+  type uid = Genre_type.key
+  type client_t = genre
+
+  let to_client g =
+    Lwt.return {
+      uid = g.Genre_type.uid ;
+      name = g.Genre_type.name ;
+    }
+
+  let find = Db.Genre.find
+end
+
+module DB_r = Db_request.Make (M)
+include DB_r
