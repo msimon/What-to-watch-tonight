@@ -1,3 +1,5 @@
+exception Reload_cache
+
 module type M =
 sig
 
@@ -23,8 +25,10 @@ module type Make =
     type key = M.key
 
     val find: key -> t Lwt.t
+
     val query_one : Bson.t -> t option Lwt.t
     val query : ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
+
     val insert: t -> unit Lwt.t
     val update: t -> unit Lwt.t
     val delete: t -> unit Lwt.t
@@ -94,12 +98,12 @@ struct
 
     Lwt.return (Bson_utils_t.from_bson d)
 
-  let cache = Balsa_config.(new Cache.cache find_in_db ~timer:(get_float "cache.cache_timer") (get_int "cache.cache_size"))
+  let cache = Balsa_config.(new Cache.cache find_in_db ~timer:(get_float "cache.cache_lifetime") (get_int "cache.cache_size"))
 
   let find key =
     cache#find key
 
-  let query_one bson_t =
+  let query_one_no_cache bson_t =
     lwt mongo = Lazy.force mongo in
     lwt r = Mongo_lwt.find_q_one mongo bson_t in
 
@@ -108,7 +112,7 @@ struct
       | h::_ -> Lwt.return (Some (Bson_utils_t.from_bson h))
 
 
-  let query ?limit ?(full=false) bson_t =
+  let query_no_cache ?limit ?(full=false) bson_t =
     lwt mongo = Lazy.force mongo in
     lwt r =
       match limit with
@@ -139,6 +143,42 @@ struct
     in
 
     Lwt.return (List.rev l)
+
+  let query_one_htbl = Hashtbl.create 100
+  let query_htbl = Hashtbl.create 100
+
+  let query_one ?(force=false) bson_t =
+    try
+      if force then raise Reload_cache ;
+
+      let (r,t) = Hashtbl.find query_one_htbl bson_t in
+      let n = int_of_float (Unix.time ()) in
+
+      if n > t then (raise Reload_cache)
+      else Lwt.return r
+
+    with Not_found | Reload_cache ->
+      lwt r = query_one_no_cache bson_t in
+      let t = int_of_float (Unix.time ()) + (Balsa_config.get_int "db.query_cache_lifetime") in
+      Hashtbl.replace query_one_htbl bson_t (r,t);
+      Lwt.return r
+
+
+  let query ?(force=false) ?limit ?(full=false) bson_t =
+    try
+      if force then raise Reload_cache ;
+
+      let (r,t) = Hashtbl.find query_htbl (limit,full,bson_t) in
+      let n = int_of_float (Unix.time ()) in
+
+      if n > t then (raise Reload_cache)
+      else Lwt.return r
+
+    with Not_found | Reload_cache ->
+      lwt r = query_no_cache ?limit ~full bson_t in
+      let t = int_of_float (Unix.time ()) + (Balsa_config.get_int "db.query_cache_lifetime") in
+      Hashtbl.replace query_htbl (limit,full,bson_t) (r,t);
+      Lwt.return r
 
   (* insert/update/delete must wait for the db to be ready *)
 

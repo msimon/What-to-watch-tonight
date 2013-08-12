@@ -7,7 +7,8 @@
   "db.port": 27017,
   "db.name": "w2wt",
 
-  "cache.cache_timer": 86400.0,
+  "cache.cache_lifetime": 86400.0,
+  "db.query_cache_lifetime": 600,
   "cache.cache_size": 100000,
 
   "api.api_url": "http://api.themoviedb.org/3",
