@@ -34,7 +34,7 @@
 
   let string_of_service = function
     | Main -> ""
-    | Movie uid -> Printf.sprintf "user/%d" (Uid.get_value uid)
+    | Movie uid -> Printf.sprintf "movie/%d" (Uid.get_value uid)
     | User uid -> Printf.sprintf "user/%d" (Uid.get_value uid)
 
   let goto s =

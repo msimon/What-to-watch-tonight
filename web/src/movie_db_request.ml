@@ -58,8 +58,8 @@ let most_popular () =
   in
 
   let query = MongoMetaOp.orderBy orderBy Bson.empty in
-  (* limit to vote_average that are higher than 7 *)
-  let query = MongoMetaOp.min (Bson.add_element "vote_average" (Bson.create_int32 7l) Bson.empty) query in
+  (* limit to vote_average that are higher than 3.5 *)
+  let query = MongoMetaOp.min (Bson.add_element "vote_average" (Bson.create_double 3.5) Bson.empty) query in
 
   lwt l = Db.Movie.query ~limit:100 ~full:true query in
   list_to_client l

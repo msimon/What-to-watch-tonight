@@ -1,9 +1,9 @@
 {shared{
   (* deriving need a type even if it is never used *)
-  type user = User deriving (Bson_ext)
-  type movie = Movie deriving (Bson_ext)
-  type genre = Genre deriving (Bson_ext)
-  type rating = Rating deriving (Bson_ext)
+  type user = User deriving (Json, Bson_ext)
+  type movie = Movie deriving (Json, Bson_ext)
+  type genre = Genre deriving (Json, Bson_ext)
+  type rating = Rating deriving (Json, Bson_ext)
 
   type _ typ =
     | User : user typ
@@ -13,7 +13,7 @@
 
   module type Uid =
   sig
-    type 'a uid deriving (Bson_ext)
+    type 'a uid deriving (Json, Bson_ext)
 
     val get_value : 'a uid -> int -> unit
     val unsaf_uid : int -> 'a uid
@@ -24,7 +24,7 @@
 
   module Uid =
   struct
-    type 'a uid = int deriving (Bson_ext)
+    type 'a uid = int deriving (Json, Bson_ext)
 
     let uid_htbl = Hashtbl.create 4
 
@@ -81,7 +81,7 @@
   end
 
 
-  type 'a uid = 'a Uid.uid deriving (Bson_ext)
+  type 'a uid = 'a Uid.uid deriving (Json,Bson_ext)
 
   let get_value = Uid.get_value
   let unsafe_uid = Uid.unsafe_uid

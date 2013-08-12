@@ -20,5 +20,5 @@ src/connection
 src/path
 src/page
 
-src/page_main
-src/page_movie
+src/main_page
+src/movie_page

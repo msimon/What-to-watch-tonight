@@ -27,6 +27,7 @@ module Movie_api = struct
     tagline: string option;
     genres: Genre_api.genre list ;
     vote_average: float ;
+    vote_count: int;
   } deriving (Json_ext, Bson_ext)
 end
 
@@ -124,26 +125,26 @@ let movie config mongo_genre u =
               Rating_w2wt.uid = Uid.fresh_uid Uid.Rating ;
               user_uid = u.User_w2wt.uid ;
               movie_uid ;
-              rating = int_of_float (m.Movie_api.vote_average +. 0.5) ;
+              rating = int_of_float ((m.Movie_api.vote_average /. 2.) +. 0.5) ;
             } in
 
             lwt _ = Mongo.insert mongo_ratings [ Rating_w2wt.Bson_utils_rating.to_bson rating ] in
 
             Lwt.return ({
-              Movie_w2wt.uid = movie_uid ;
-              title = m.Movie_api.title ;
-              original_title =
-                if m.Movie_api.title = m.Movie_api.original_title then None
-                else Some m.Movie_api.original_title ;
-              overview = m.Movie_api.overview ;
-              poster_path = m.Movie_api.poster_path ;
-              release_date = m.Movie_api.release_date ;
-              tagline = m.Movie_api.tagline ;
-              vote_average = float_of_int rating.Rating_w2wt.rating ;
-              vote_count = 1;
-              genres ;
-              vector = [] ;
-            }::acc)
+                Movie_w2wt.uid = movie_uid ;
+                title = m.Movie_api.title ;
+                original_title =
+                  if m.Movie_api.title = m.Movie_api.original_title then None
+                  else Some m.Movie_api.original_title ;
+                overview = m.Movie_api.overview ;
+                poster_path = m.Movie_api.poster_path ;
+                release_date = m.Movie_api.release_date ;
+                tagline = m.Movie_api.tagline ;
+                vote_average = float_of_int (rating.Rating_w2wt.rating) ;
+                vote_count = m.Movie_api.vote_count ;
+                genres ;
+                vector = [] ;
+              }::acc)
         ) acc ds
       in
 

@@ -1,5 +1,5 @@
 {shared{
-  type key = Uid.movie Uid.uid deriving (Bson_ext)
+  type key = Uid.movie Uid.uid deriving (Json, Bson_ext)
 
   (* n size vector, n = # gender in our case *)
   type param = {
