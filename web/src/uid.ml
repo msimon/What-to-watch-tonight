@@ -15,21 +15,21 @@
   sig
     type 'a uid deriving (Json, Bson_ext)
 
-    val get_value : 'a uid -> int -> unit
-    val unsaf_uid : int -> 'a uid
+    val get_value : 'a uid -> int
+    val unsafe : int -> 'a uid
     val fresh_uid : 't typ -> 't uid
-    val set_uid : 't typ -> unit
+    val set_uid : 't typ -> 'a uid -> unit
 
   end
 
-  module Uid =
+  module Uid : Uid =
   struct
     type 'a uid = int deriving (Json, Bson_ext)
 
     let uid_htbl = Hashtbl.create 4
 
     let get_value uid = uid
-    let unsafe_uid uid = uid
+    let unsafe uid = uid
 
     let fresh_uid : type t. t typ -> t uid =
       fun t ->
@@ -84,7 +84,7 @@
   type 'a uid = 'a Uid.uid deriving (Json,Bson_ext)
 
   let get_value = Uid.get_value
-  let unsafe_uid = Uid.unsafe_uid
+  let unsafe = Uid.unsafe
 }}
 
 

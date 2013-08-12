@@ -73,7 +73,7 @@ struct
             let n = Bson.get_int64 (Bson.get_element M.uid_field h) in
             (Int64.to_int n) + 1
         in
-        Uid.set_uid M.uid_typ n ;
+        Uid.set_uid M.uid_typ (Uid.unsafe n) ;
 
         (* add index *)
         lwt _ =

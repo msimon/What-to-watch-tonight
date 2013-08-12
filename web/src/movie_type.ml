@@ -39,3 +39,6 @@ let indexes () =
   let vote_count = ("vote_count",[]) in
 
   [ uid; vote_average; vote_count ]
+
+let bson_uid (key : key) =
+  Bson.create_int64 (Int64.of_int (Uid.get_value key))

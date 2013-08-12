@@ -15,7 +15,7 @@
     let no_arg f _ = f () in
     let arg_opt_uid f r = match Regexp.matched_group r 1 with
       | None -> Main
-      | Some x -> f (Uid.unsafe_uid (int_of_string x))
+      | Some x -> f (Uid.unsafe (int_of_string x))
     in
 
     let rec iter = function

@@ -38,3 +38,6 @@ let indexes () =
   let fb_uid = ("facebook.facebook_uid",[ Mongo_lwt.Unique true ]) in
 
   [ uid; fb_uid ]
+
+let bson_uid (key : Uid.user Uid.uid) =
+  Bson.create_int64 (Int64.of_int (Uid.get_value key))
