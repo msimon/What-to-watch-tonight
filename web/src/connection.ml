@@ -1,5 +1,7 @@
 {server{
 
+  exception Not_connected
+
   let session = Eliom_reference.eref ~persistent:"user_connection" ~scope:Eliom_common.default_session_scope None
 
   let get_session () = Eliom_reference.get session
@@ -7,8 +9,11 @@
   let remove_session () = Eliom_reference.unset session
 
   let get_uid () =
-    Balsa_option.map (
-      fun u -> u.User_db_request.uid
+    lwt s = get_session () in
+    Lwt.return (
+      Balsa_option.map (
+        fun u -> u.User_db_request.uid
+      ) s
     )
 
   let check =
