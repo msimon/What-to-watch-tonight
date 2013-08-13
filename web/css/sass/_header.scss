@@ -1,0 +1,50 @@
+.header {
+  background-color: $w2wt_blue ;
+  height: #{$header_height}px;
+  line-height: 100%;
+
+  @include box-shadow(rgba(0,0,0,0.5) 0px 1px 3px);
+
+  @media (min-width: #{$min_width}px) {
+    position: fixed;
+    left: #{$full_container_padding}px;
+    right: #{$full_container_padding}px;
+  }
+
+  min-width: #{$min_width - $full_container_padding * 2}px;
+
+  > div {
+    height : 100%;
+    float : left ;
+
+    &.logo {
+      width: 137px;
+    }
+    &.last {
+      float: right ;
+      width: 450px;
+    }
+
+    @media (min-width: #{$optimal-width}px) {
+      &.section {
+        width: 48%;
+        ul li {
+          float: left;
+          padding: 0 15px;
+          width: 26%;
+        }
+      }
+    }
+
+    @media (max-width: #{$optimal-width}px) {
+      &.section {
+        width: 35%;
+        ul li {
+          float: left;
+          padding: 0 15px;
+          width: 23%;
+        }
+      }
+    }
+  }
+}

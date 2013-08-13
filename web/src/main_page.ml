@@ -39,19 +39,7 @@
       ) movies
     in
 
-    let connected = R.node (
-        S.map (fun s ->
-            match s with
-              | None -> p [ pcdata "not connected" ]
-              | Some u ->
-                p [ pcdata (Printf.sprintf "Connected as %s" u.User_request.name) ]
-          ) Connection.connected
-      )
-    in
-
     Lwt.return [
-      button ~button_type:`Button ~a:[ a_onclick (fun _ -> Lwt.async (fun _ -> Connection.facebook_connect ()); false) ] [ pcdata "facebook_connect" ];
-      connected ;
       h1 [ pcdata "100 most popular movie" ] ;
       div movies_dom
     ]

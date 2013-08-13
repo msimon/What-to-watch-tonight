@@ -1,0 +1,21 @@
+$min_width: 950;
+$optimal-width: 1200;
+
+$full_container_padding: 20;
+$w2wt_blue : #008ECE;
+$body_grey : #e1e1e1;
+
+$header_height:70;
+
+body {
+  background-color : $body_grey;
+}
+
+.unselectable {
+  -moz-user-select: -moz-none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  outline: none;
+}

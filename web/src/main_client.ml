@@ -16,7 +16,12 @@
           Balsa_facebook.load_facebook_sdk (Balsa_config.get_string "fb.app-id")
         );
 
-      Manip.appendToBody container;
+      Manip.appendToBody (
+        div ~a:[ a_class ["full_container"]] [
+          div ~a:[ a_class ["fixed_header_hide"]] [];
+          Header.header ;
+          container;
+        ]);
       Path.init ();
 
       (* Check if session value should be update *)

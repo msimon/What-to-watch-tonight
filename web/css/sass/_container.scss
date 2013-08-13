@@ -1,0 +1,25 @@
+.full_container {
+  width: auto;
+  padding: #{$full_container_padding}px;
+  min-width: #{$min_width - $full_container_padding * 2}px;
+}
+
+.container {
+  margin-top: #{$header_height + 30}px;
+
+  @media (max-width: #{$min_width}px) {
+    margin-top: 30px;
+  }
+}
+
+
+.fixed_header_hide {
+  position: fixed;
+  height: #{$full_container_padding}px ;
+
+  top: 0;
+  left: #{$full_container_padding}px ;
+  right: #{$full_container_padding}px ;
+
+  background-color: $body_grey ;
+}

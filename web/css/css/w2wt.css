@@ -1,0 +1,300 @@
+/* base */
+/* line 13, ../sass/_reset.scss */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  vertical-align: baseline;
+  line-height: 1.4em;
+  color: black;
+}
+
+/* line 23, ../sass/_reset.scss */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: normal;
+}
+
+/* line 26, ../sass/_reset.scss */
+a {
+  color: #000;
+  text-decoration: none;
+}
+
+/* line 30, ../sass/_reset.scss */
+a:focus {
+  outline: 0;
+}
+
+/* HTML5 display-role reset for older browsers */
+/* line 34, ../sass/_reset.scss */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+
+/* line 37, ../sass/_reset.scss */
+body {
+  line-height: 1;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* line 44, ../sass/_reset.scss */
+html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* line 45, ../sass/_reset.scss */
+ol, ul {
+  list-style: none;
+}
+
+/* line 48, ../sass/_reset.scss */
+blockquote, q {
+  quotes: none;
+}
+
+/* line 52, ../sass/_reset.scss */
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+
+/* line 56, ../sass/_reset.scss */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* line 61, ../sass/_reset.scss */
+a:link {
+  text-decoration: none;
+  background-color: transparent;
+}
+
+/* line 66, ../sass/_reset.scss */
+a:visited {
+  text-decoration: none;
+  background-color: transparent;
+}
+
+/* line 71, ../sass/_reset.scss */
+a:hover {
+  text-decoration: none;
+  background-color: transparent;
+}
+
+/* line 76, ../sass/_reset.scss */
+a:active {
+  text-decoration: none;
+  background-color: transparent;
+}
+
+/* line 81, ../sass/_reset.scss */
+* {
+  background-repeat: no-repeat;
+}
+
+/* line 85, ../sass/_reset.scss */
+*::selection {
+  /* Safari */
+  background: none repeat scroll 0 0;
+  color: #000;
+}
+
+/* line 90, ../sass/_reset.scss */
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+/* line 100, ../sass/_reset.scss */
+p {
+  word-wrap: break-word;
+}
+
+/* line 104, ../sass/_reset.scss */
+a {
+  cursor: pointer;
+}
+
+/* line 108, ../sass/_reset.scss */
+button {
+  cursor: pointer;
+}
+
+/* line 112, ../sass/_reset.scss */
+input, textarea {
+  outline: none;
+  padding: 0;
+}
+
+/* custom preset  */
+/* html { */
+/*   font-family: $be_myriad */
+/* } */
+/* button { */
+/*   font-family: $be_myriad; */
+/* } */
+/* h1  { */
+/*   font-family: $be_gothic ; */
+/*   font-size: 36px; */
+/* } */
+/* h2 { */
+/*   font-family: $be_myriad ; */
+/*   font-size:14px; */
+/* } */
+/* h3 { */
+/*   font-size: 14px; */
+/* } */
+/* p { */
+/*   font-size: 14px; */
+/* } */
+/* input[type="text"], input[type="password"], textarea { */
+/*   padding-left: 6px; */
+/*   font-size: 14px ; */
+/*   font-family: $be_myriad ; */
+/* } */
+/* input[type="text"], input[type="password"] { */
+/*   height: 28px; */
+/*   border: none; */
+/*   @include border-radius(3px); */
+/*   background-color: $be_yag; */
+/*   margin: 0 ; */
+/* } */
+/* textarea { */
+/*   border: none; */
+/*   margin: 0; */
+/*   background-color: $be_yag; */
+/*   @include border-radius(3px); */
+/*   padding: 5px; */
+/* } */
+/* input::-webkit-input-placeholder, */
+/* input::-moz-placeholder, */
+/* input::-ms-placeholder { */
+/*   /\* name this color *\/ */
+/*   color: #999 ; */
+/* } */
+/* line 10, ../sass/_base.scss */
+body {
+  background-color: #e1e1e1;
+}
+
+/* line 14, ../sass/_base.scss */
+.unselectable {
+  -moz-user-select: -moz-none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  outline: none;
+}
+
+/* website */
+/* line 1, ../sass/_container.scss */
+.full_container {
+  width: auto;
+  padding: 20px;
+  min-width: 910px;
+}
+
+/* line 7, ../sass/_container.scss */
+.container {
+  margin-top: 100px;
+}
+@media (max-width: 950px) {
+  /* line 7, ../sass/_container.scss */
+  .container {
+    margin-top: 30px;
+  }
+}
+
+/* line 16, ../sass/_container.scss */
+.fixed_header_hide {
+  position: fixed;
+  height: 20px;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  background-color: #e1e1e1;
+}
+
+/* line 1, ../sass/_header.scss */
+.header {
+  background-color: #008ece;
+  height: 70px;
+  line-height: 100%;
+  -webkit-box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 3px;
+  -moz-box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 3px;
+  box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 3px;
+  min-width: 910px;
+}
+@media (min-width: 950px) {
+  /* line 1, ../sass/_header.scss */
+  .header {
+    position: fixed;
+    left: 20px;
+    right: 20px;
+  }
+}
+/* line 16, ../sass/_header.scss */
+.header > div {
+  height: 100%;
+  float: left;
+}
+/* line 20, ../sass/_header.scss */
+.header > div.logo {
+  width: 137px;
+}
+/* line 23, ../sass/_header.scss */
+.header > div.last {
+  float: right;
+  width: 450px;
+}
+@media (min-width: 1200px) {
+  /* line 29, ../sass/_header.scss */
+  .header > div.section {
+    width: 48%;
+  }
+  /* line 31, ../sass/_header.scss */
+  .header > div.section ul li {
+    float: left;
+    padding: 0 15px;
+    width: 26%;
+  }
+}
+@media (max-width: 1200px) {
+  /* line 40, ../sass/_header.scss */
+  .header > div.section {
+    width: 35%;
+  }
+  /* line 42, ../sass/_header.scss */
+  .header > div.section ul li {
+    float: left;
+    padding: 0 15px;
+    width: 23%;
+  }
+}

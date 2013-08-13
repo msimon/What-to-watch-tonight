@@ -17,7 +17,7 @@ let html_v =
        meta ~a:([a_property "og:site_name"; a_content "What 2 watch tonigh"]) () ;
 
        (* link ~rel:[ `Stylesheet ] ~href:(uri_of_string (fun () -> "/bootstrap.min.css")) (); *)
-       (* link ~rel:[ `Stylesheet ] ~href:(uri_of_string (fun () -> "/dom_type.css")) (); *)
+       link ~rel:[ `Stylesheet ] ~href:(uri_of_string (fun () -> "/w2wt.css")) ();
      ])
     (body [])
 
@@ -38,6 +38,9 @@ let main _ _ =
 
 
 let _ =
-  Dom_type.register_service
-    ~path:[ "" ] ~get_params:Eliom_parameter.unit
-    main
+  Dom_type.register Service.main main;
+  Dom_type.register Service.movie main;
+  Dom_type.register Service.profile main;
+  Dom_type.register Service.what_to_watch main;
+  Dom_type.register Service.taste_profile main;
+  Dom_type.register Service.popular_movie main
