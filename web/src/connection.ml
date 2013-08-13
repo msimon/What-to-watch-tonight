@@ -12,7 +12,7 @@
     lwt s = get_session () in
     Lwt.return (
       Balsa_option.map (
-        fun u -> u.User_db_request.uid
+        fun u -> u.User_request.uid
       ) s
     )
 
@@ -22,8 +22,8 @@
         match_lwt get_session () with
           | Some u ->
             (* Search in db and compare db value with session value *)
-            lwt db_u = Db.User.find u.User_db_request.uid in
-            lwt db_u = User_db_request.to_client db_u in
+            lwt db_u = Db.User.find u.User_request.uid in
+            lwt db_u = User_request.to_client db_u in
             if u <> db_u then begin
               lwt _ = set_session (Some db_u) in
               Lwt.return (Some db_u)
@@ -54,7 +54,7 @@
   let facebook_sign_in =
     server_function Json.t<string * string> (
       fun arg ->
-       lwt u = User_db_request.facebook_sign_in arg in
+       lwt u = User_request.facebook_sign_in arg in
        lwt _ = set_session (Some u) in
        Lwt.return u
     )

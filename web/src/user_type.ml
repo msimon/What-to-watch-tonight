@@ -34,8 +34,8 @@ let search uid =
 let key t = t.uid
 
 let indexes () =
-  let uid = ("uid",[ Mongo_lwt.Unique true ]) in
-  let fb_uid = ("facebook.facebook_uid",[ Mongo_lwt.Unique true ]) in
+  let uid = (["uid"],[ Mongo_lwt.Unique true ]) in
+  let fb_uid = (["facebook.facebook_uid"],[ Mongo_lwt.Unique true ]) in
 
   [ uid; fb_uid ]
 

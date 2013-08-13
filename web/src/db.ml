@@ -14,7 +14,7 @@ sig
   val search: key -> Bson.t
   val key: t -> key
 
-  val indexes: unit -> (string * (Mongo_lwt.index_option list)) list
+  val indexes: unit -> (string list * (Mongo_lwt.index_option list)) list
 
 end
 
@@ -26,8 +26,11 @@ module type Make =
 
     val find: key -> t Lwt.t
 
-    val query_one : Bson.t -> t option Lwt.t
-    val query : ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
+    val query_one_no_cache : Bson.t -> t option Lwt.t
+    val query_no_cache : ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
+
+    val query_one : ?force:bool -> Bson.t -> t option Lwt.t
+    val query : ?force:bool -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
 
     val insert: t -> unit Lwt.t
     val update: t -> unit Lwt.t
@@ -55,7 +58,6 @@ struct
   let ready,set_ready = Lwt.task ()
 
   let _ =
-    let indexes = M.indexes () in
     Lwt.async (
       fun _ ->
         lwt mongo = Lazy.force mongo in
@@ -71,16 +73,16 @@ struct
           | [] -> 1
           | h::_ ->
             let n = Bson.get_int64 (Bson.get_element M.uid_field h) in
-            (Int64.to_int n) + 1
+            Int64.to_int n
         in
         Uid.set_uid M.uid_typ (Uid.unsafe n) ;
 
         (* add index *)
         lwt _ =
           Lwt_list.iter_p (
-            fun (name, options) ->
-              Mongo_lwt.ensure_simple_index ~options mongo name
-          ) indexes;
+            fun (fields, options) ->
+              Mongo_lwt.ensure_multi_simple_index ~options mongo fields
+          ) (M.indexes ());
         in
 
         (* notify that this collection is ready *)
@@ -227,7 +229,7 @@ struct
          let d = update_fun d in
          lwt _ = update d in
          finalize ()
-       with _ ->
+       with exn ->
          finalize ()
     )
 

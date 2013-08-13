@@ -21,7 +21,12 @@ let search uid =
 let key t = t.uid
 
 let indexes () =
-  [("uid",[ Mongo_lwt.Unique true ])]
+  [
+    (["uid"],[ Mongo_lwt.Unique true ]);
+    (["movie_uid"], []);
+    (["user_uid"], []);
+    ([ "user_uid"; "movie_uid" ], [ Mongo_lwt.Unique true ] )
+  ]
 
 let bson_uid (key : key) =
   Bson.create_int64 (Int64.of_int (Uid.get_value key))

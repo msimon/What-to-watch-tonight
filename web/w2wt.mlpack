@@ -3,9 +3,10 @@ src/movie_type
 src/genre_type
 src/rating_type
 
-src/movie_db_request
-src/genre_db_request
-src/user_db_request
+src/movie_request
+src/genre_request
+src/user_request
+src/rating_request
 
 src/config
 src/uid

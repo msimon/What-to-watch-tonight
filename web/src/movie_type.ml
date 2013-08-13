@@ -34,9 +34,9 @@ let search uid =
 let key t = t.uid
 
 let indexes () =
-  let uid = ("uid",[ Mongo_lwt.Unique true ]) in
-  let vote_average = ("vote_average",[]) in
-  let vote_count = ("vote_count",[]) in
+  let uid = (["uid"],[ Mongo_lwt.Unique true ]) in
+  let vote_average = (["vote_average"],[]) in
+  let vote_count = (["vote_count"],[]) in
 
   [ uid; vote_average; vote_count ]
 

@@ -2,7 +2,7 @@
 
   let most_popular_movie =
     server_function Json.t<unit> (
-      fun () -> Movie_db_request.most_popular ()
+      fun () -> Movie_request.most_popular ()
     )
 
 }}
@@ -16,7 +16,7 @@
   open Balsa_react
 
   let dom _ =
-    let open Movie_db_request in
+    let open Movie_request in
 
     lwt movies = %most_popular_movie () in
 
@@ -44,7 +44,7 @@
             match s with
               | None -> p [ pcdata "not connected" ]
               | Some u ->
-                p [ pcdata (Printf.sprintf "Connected as %s" u.User_db_request.name) ]
+                p [ pcdata (Printf.sprintf "Connected as %s" u.User_request.name) ]
           ) Connection.connected
       )
     in
