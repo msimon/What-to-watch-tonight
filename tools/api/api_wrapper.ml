@@ -47,6 +47,7 @@ let load_movies config mongodb action =
 
   let rec fetch_in uid =
     let call () =
+      Printf.printf "query : %d\n%!" uid;
       lwt m = Db.fetch_movie_str config uid in
       Db.add_movie_to_pool m;
       Lwt.return_unit
