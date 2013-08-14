@@ -106,14 +106,16 @@ let split ch s =
   done;
   List.rev (!x)
 
+(* remove dic for now*)
 let remove_useless_word =
-  let dic = [ "an"; "a"; "of"; "to"; "the"; "in"; "on"; "-"; "_"; "+"; "and"; "for"; "is"; "are" ] in
+  (* let dic = [ "an"; "a"; "of"; "to"; "the"; "in"; "on"; "-"; "_"; "+"; "and"; "for"; "is"; "are" ] in *)
   (fun l ->
      List.fold_left (
        fun acc s ->
          let s = String.lowercase s in
-         if List.mem s dic then acc
-         else s::acc
+         s::acc
+         (* if List.mem s dic then acc *)
+         (* else s::acc *)
      ) [] l
   )
 

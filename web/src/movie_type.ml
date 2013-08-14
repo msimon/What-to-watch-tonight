@@ -7,7 +7,6 @@
     value : float ;
   } deriving (Bson_ext)
 
-  (* /!\ title_search is not present here, but is in db *)
   type t = {
     uid: key ;
     title: string ;
@@ -18,6 +17,7 @@
     tagline : string option ;
     vote_average : float ;
     vote_count : int ;
+    title_search: string list ; (* title_search is only present here for the database, not for direct use *)
     genres : Uid.genre Uid.uid list ;
     vector : param list ;
   } deriving (Bson_ext)
@@ -38,7 +38,6 @@ let indexes () =
   let uid = (["uid"],[ Mongo_lwt.Unique true ]) in
   let vote_average = (["vote_average"],[]) in
   let vote_count = (["vote_count"],[]) in
-  (* /!\ title_search is not present here, but is in db *)
   let title_index = (["title_search"], []) in
 
   [ uid; vote_average; vote_count; title_index ]

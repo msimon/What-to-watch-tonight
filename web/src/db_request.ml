@@ -18,13 +18,8 @@ struct
     Lwt_list.map_s to_client db_ts
 
   let of_uid uid =
-    let open Lwt in
-    (M.find uid) >>= (
-      fun db_t ->
-        to_client db_t
-    )
-    (* lwt db_t = M.find uid in *)
-    (* to_client db_t *)
+    lwt db_t = M.find uid in
+    to_client db_t
 
   let list_of_uid uids =
     Lwt_list.map_s of_uid uids

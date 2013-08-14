@@ -1,3 +1,13 @@
+{server{
+
+  let search =
+    server_function Json.t<string> (
+      fun prefix ->
+        Movie_request.search prefix
+    )
+
+}}
+
 {client{
 
   open Eliom_content
@@ -6,7 +16,7 @@
 
   open Balsa_react
 
-  let header =
+  let header () =
     let profile_section =
       R.node (
         S.map (
@@ -59,6 +69,29 @@
       )
     in
 
+    let movie_search  =
+      let handle_confirmation_selected m =
+        Path.goto (Path.Movie m.Movie_request.uid)
+      in
+
+      let handle_confirmation_noselection s =
+        Balsa_log.debug "go to search page: %s" s
+      in
+
+      let create_suggestion_li m = [ pcdata m.Movie_request.title ],[] in
+
+      Balsa_autocomplete.create
+        ~handle_confirmation_selected
+        ~handle_confirmation_noselection
+        ~create_suggestion_li
+        ~retrieve_suggestions:(fun prefix -> %search prefix)
+        ~select_is_confirm:true
+        ~display_no_result:(pcdata "No result")
+        ~placeholder:"Search for movies"
+        ~a:[ a_class ["search"]]
+        ~string_of_value:(fun m -> m.Movie_request.title)
+        ()
+    in
 
     div ~a:[ a_class ["header"; "connected"]] [
       div ~a:[ a_class ["logo"]] [
@@ -72,7 +105,7 @@
       ];
       div ~a:[ a_class ["last"]] [
         div [
-          input ~input_type:`Text ~a:[ a_placeholder "Search for movies"; a_class ["search"]] ();
+          Balsa_autocomplete.node movie_search ;
           span ~a:[ a_class ["websymbols"; "search_icon"]] [ pcdata "L" ];
           span ~a:[ a_class ["vertical_sep"]] []
         ];

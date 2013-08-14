@@ -146,3 +146,23 @@ let rate : Movie_type.key -> User_type.key -> int -> unit Lwt.t =
     update_user ;
     insert_rating ;
   ]
+
+let search prefix =
+  (* read http://docs.mongodb.org/manual/reference/operator/regex/ before changing regexp.
+     /^prefix/ is the faster way to search in index
+  *)
+  let prefixes = Balsa_string.normalize_split prefix in
+  let queries =
+    List.map (
+      fun prefix ->
+        let prefix = "^" ^ (String.lowercase prefix) in
+        let regex = Bson.add_element "$regex" (Bson.create_string prefix) Bson.empty in
+        let query = Bson.add_element "title_search" (Bson.create_doc_element regex) Bson.empty in
+        Bson.create_doc_element query
+    ) prefixes
+  in
+
+  let query = Bson.add_element "$and" (Bson.create_list queries) Bson.empty in
+  lwt ml = Db.Movie.query ~limit:(Balsa_config.get_int "autocomplete.movie.nb_return") query in
+
+  list_to_client ml

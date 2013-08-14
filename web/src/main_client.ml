@@ -19,7 +19,7 @@
       Manip.appendToBody (
         div ~a:[ a_class ["full_container"]] [
           div ~a:[ a_class ["fixed_header_hide"]] [];
-          Header.header ;
+          Header.header () ;
           container;
         ]);
       Path.init ();

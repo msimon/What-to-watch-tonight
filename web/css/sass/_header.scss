@@ -33,20 +33,41 @@
       float: right ;
       width: 450px;
 
-      div:first-child {
+      > div:first-child {
         height: 100%;
         float: left ;
-        > input {
-          width: 230px ;
-          height: 23px;
-          border-top: 1px solid #c9c9c9;
-          border-left: 1px solid #c9c9c9;
-          font-family: $basic_font;
-          font-size: 11px ;
-          padding-left: 3px;
-          padding-right: 20px;
+        div.autocp {
+          display: inline-block ;
+          > input {
+            width: 230px ;
+            height: 23px;
+            border-top: 1px solid #c9c9c9;
+            border-left: 1px solid #c9c9c9;
+            font-family: $basic_font;
+            font-size: 11px ;
+            padding-left: 3px;
+            padding-right: 20px;
+          }
+          > ul {
+            position: absolute ;
+            width: 256px;
+            background-color: $body_grey_alpha();
+
+            @include box-shadow(#CCC 0px 4px 10px 2px);
+
+            > li {
+              cursor: pointer ;
+              padding: 5px;
+              font-family: $basic_font ;
+              &.highlighted,&:hover {
+                background-color: #CCC;
+                color: $w2wt_blue;
+              }
+            }
+          }
+
         }
-        > span.search_icon {
+        span.search_icon {
           color: #CCC ;
           position: relative ;
           left: -20px;
