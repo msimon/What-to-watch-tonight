@@ -7,6 +7,15 @@ $body_grey : #e1e1e1;
 
 $header_height:70;
 
+$basic_font: arial, helvetica, clean, sans-serif;
+$logo_font: forgotten_futurist_shadow ;
+$websymbols : WebSymbolsRegular;
+
+.websymbols {
+  font-family: $websymbols!important;
+}
+
+
 body {
   background-color : $body_grey;
 }
@@ -18,4 +27,12 @@ body {
   -o-user-select: none;
   user-select: none;
   outline: none;
+}
+
+.vertical_sep {
+  height: 100%;
+  visibility: hidden;
+  overflow: hidden;
+  display:inline-block;
+  vertical-align: middle;
 }

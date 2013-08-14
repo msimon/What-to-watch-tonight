@@ -3,21 +3,22 @@
   open Balsa_react
 
   type service =
-    | Main
     | Movie of Movie_type.key
     | Profile
     | What_to_watch
     | Taste_profile
     | Popular_movies
 
+  let main_service = What_to_watch
+
   let path, set_path = S.create ""
-  let service,set_service = S.create Main
+  let service,set_service = S.create main_service
   let init_aux,do_init_aux = E.create ()
 
   let parse s =
     let no_arg f _ = f () in
     let arg_opt_uid f r = match Regexp.matched_group r 1 with
-      | None -> Main
+      | None -> main_service
       | Some x -> f (Uid.unsafe (int_of_string x))
     in
 
@@ -30,7 +31,7 @@
     in
 
     iter [
-      "", no_arg (fun () -> Main);
+      "", no_arg (fun () -> main_service);
       "movie/(.+)", arg_opt_uid (fun uid -> Movie uid);
       (* "profile/(.+)", arg_opt_uid (fun uid -> Profile uid); *)
       "profile", no_arg (fun () -> Profile);
@@ -40,7 +41,6 @@
     ]
 
   let string_of_service = function
-    | Main -> ""
     | Movie uid -> Printf.sprintf "movie/%d" (Uid.get_value uid)
     (* | Profile uid -> Printf.sprintf "profile/%d" (Uid.get_value uid) *)
     | Profile -> "profile"
@@ -57,7 +57,7 @@
       fun path ->
         if path <> string_of_service (S.value service) then
           match parse path with
-            | None -> set_service Main
+            | None -> set_service main_service
             | Some x -> set_service x
         else ()
     ) path

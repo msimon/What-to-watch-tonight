@@ -45,7 +45,7 @@
     ]
 
   module Page_main = Page.Make(struct
-      let service s = (s = Path.Main)
+      let service s = (s = Path.What_to_watch)
       let classes = []
       let dom = dom
     end)

@@ -198,12 +198,17 @@ input, textarea {
 /*   /\* name this color *\/ */
 /*   color: #999 ; */
 /* } */
-/* line 10, ../sass/_base.scss */
+/* line 14, ../sass/_base.scss */
+.websymbols {
+  font-family: WebSymbolsRegular !important;
+}
+
+/* line 19, ../sass/_base.scss */
 body {
   background-color: #e1e1e1;
 }
 
-/* line 14, ../sass/_base.scss */
+/* line 23, ../sass/_base.scss */
 .unselectable {
   -moz-user-select: -moz-none;
   -khtml-user-select: none;
@@ -211,6 +216,32 @@ body {
   -o-user-select: none;
   user-select: none;
   outline: none;
+}
+
+/* line 32, ../sass/_base.scss */
+.vertical_sep {
+  height: 100%;
+  visibility: hidden;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@font-face {
+  font-family: 'forgotten_futurist_shadow';
+  src: url("/font/Forgotten-Futurist-Shadow/forgotts.eot");
+  src: url("/font/Forgotten-Futurist-Shadow/forgotts.ttf") format("truetype"), url("/font/Forgotten-Futurist-Shadow/forgotts.svg") format("svg"), url("/font/Forgotten-Futurist-Shadow/forgotts.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* http://nelsondev.blogspot.com/2012/11/web-symbols-typeface-css3.html */
+@font-face {
+  font-family: 'WebSymbolsRegular';
+  src: url("/font/websymbols/websymbols-regular-webfont.eot");
+  src: url("/font/websymbols/websymbols-regular-webfont.eot?#iefix") format("embedded-opentype"), url("/font/websymbols/websymbols-regular-webfont.woff") format("woff"), url("/font/websymbols/websymbols-regular-webfont.ttf") format("truetype"), url("/font/websymbols/websymbols-regular-webfont.svg#WebSymbolsRegular") format("svg");
+  font-weight: normal;
+  font-style: normal;
 }
 
 /* website */
@@ -269,32 +300,117 @@ body {
 .header > div.logo {
   width: 137px;
 }
-/* line 23, ../sass/_header.scss */
+/* line 22, ../sass/_header.scss */
+.header > div.logo a {
+  font-family: forgotten_futurist_shadow;
+  font-size: 31px;
+  color: white;
+  padding: 0 20px;
+  position: relative;
+  top: 4px;
+}
+/* line 32, ../sass/_header.scss */
 .header > div.last {
   float: right;
   width: 450px;
 }
+/* line 36, ../sass/_header.scss */
+.header > div.last div:first-child {
+  height: 100%;
+  float: left;
+}
+/* line 39, ../sass/_header.scss */
+.header > div.last div:first-child > input {
+  width: 230px;
+  height: 23px;
+  border-top: 1px solid #c9c9c9;
+  border-left: 1px solid #c9c9c9;
+  font-family: arial, helvetica, clean, sans-serif;
+  font-size: 11px;
+  padding-left: 3px;
+  padding-right: 20px;
+}
+/* line 49, ../sass/_header.scss */
+.header > div.last div:first-child > span.search_icon {
+  color: #cccccc;
+  position: relative;
+  left: -20px;
+  top: 2px;
+}
+/* line 57, ../sass/_header.scss */
+.header > div.last div:last-child {
+  height: 100%;
+  float: left;
+  width: 170px;
+  padding-left: 7px;
+  background-color: #008ece;
+  background-image: -webkit-linear-gradient(left, #0080c0, #008ece);
+  cursor: pointer;
+}
+/* line 67, ../sass/_header.scss */
+.header > div.last div:last-child:hover {
+  background-image: -webkit-linear-gradient(left, #009fdf, #0090d0);
+}
+/* line 71, ../sass/_header.scss */
+.header > div.last div:last-child > span {
+  margin-left: 7px;
+  color: white;
+  font-family: arial, helvetica, clean, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 106px;
+  display: inline-block;
+}
+/* line 82, ../sass/_header.scss */
+.header > div.last div:last-child > * {
+  vertical-align: middle;
+}
+/* line 89, ../sass/_header.scss */
+.header > div.section ul {
+  height: 100%;
+}
+/* line 91, ../sass/_header.scss */
+.header > div.section ul li {
+  height: 100%;
+  font-family: arial, helvetica, clean, sans-serif;
+  font-size: 17px;
+  font-weight: bold;
+  text-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px;
+  float: left;
+  padding: 0 15px;
+  text-align: center;
+}
+/* line 102, ../sass/_header.scss */
+.header > div.section ul li > a {
+  color: #dddddd;
+  display: inline-block;
+}
+/* line 103, ../sass/_header.scss */
+.header > div.section ul li > a:hover, .header > div.section ul li > a.selected {
+  color: white;
+}
+/* line 110, ../sass/_header.scss */
+.header > div.section ul li > * {
+  vertical-align: middle;
+}
 @media (min-width: 1200px) {
-  /* line 29, ../sass/_header.scss */
+  /* line 88, ../sass/_header.scss */
   .header > div.section {
     width: 48%;
   }
-  /* line 31, ../sass/_header.scss */
+  /* line 118, ../sass/_header.scss */
   .header > div.section ul li {
-    float: left;
-    padding: 0 15px;
     width: 26%;
   }
 }
 @media (max-width: 1200px) {
-  /* line 40, ../sass/_header.scss */
+  /* line 88, ../sass/_header.scss */
   .header > div.section {
     width: 35%;
   }
-  /* line 42, ../sass/_header.scss */
+  /* line 124, ../sass/_header.scss */
   .header > div.section ul li {
-    float: left;
-    padding: 0 15px;
-    width: 23%;
+    width: 21%;
   }
 }

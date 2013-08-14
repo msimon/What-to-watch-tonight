@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'forgotten_futurist_shadow';
+  src: url('/font/Forgotten-Futurist-Shadow/forgotts.eot');
+  src: url('/font/Forgotten-Futurist-Shadow/forgotts.ttf') format('truetype'),
+       url('/font/Forgotten-Futurist-Shadow/forgotts.svg') format('svg'),
+       url('/font/Forgotten-Futurist-Shadow/forgotts.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* http://nelsondev.blogspot.com/2012/11/web-symbols-typeface-css3.html */
+@font-face {
+    font-family: 'WebSymbolsRegular';
+    src: url('/font/websymbols/websymbols-regular-webfont.eot');
+    src: url('/font/websymbols/websymbols-regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/font/websymbols/websymbols-regular-webfont.woff') format('woff'),
+         url('/font/websymbols/websymbols-regular-webfont.ttf') format('truetype'),
+         url('/font/websymbols/websymbols-regular-webfont.svg#WebSymbolsRegular') format('svg');
+    font-weight: normal;font-style: normal;
+}

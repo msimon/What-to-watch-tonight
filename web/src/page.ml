@@ -34,7 +34,8 @@
                     Manip.replaceAllChild (Lazy.force container) d;
                     Lwt.return_unit
                 )
-              end else ()
+              end else
+                Manip.replaceAllChild (Lazy.force container) []
           ) Path.service
       ) (E.once Path.init_aux)
   end

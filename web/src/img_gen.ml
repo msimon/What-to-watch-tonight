@@ -22,4 +22,12 @@
     let src = Balsa_config.get_string "default_movie_img" in
     img ~src ~alt ()
 
+  let profile_picture u =
+    match u.User_request.facebook with
+      | Some f ->
+        img ~src:(Printf.sprintf "https://graph.facebook.com/%s/picture" f.User_type.facebook_uid) ~alt:u.User_request.name ()
+      | None ->
+        let src = Balsa_config.get_string "default_profile_img" in
+        img ~src ~alt:u.User_request.name ()
+
 }}
