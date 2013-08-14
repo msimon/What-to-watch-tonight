@@ -414,3 +414,16 @@ body {
     width: 21%;
   }
 }
+
+/* line 3, ../sass/_movie.scss */
+div.movie_page div.ratings > span {
+  cursor: pointer;
+  margin: 5px;
+  padding: 2px;
+  display: inline-block;
+}
+/* line 9, ../sass/_movie.scss */
+div.movie_page div.ratings > span:hover, div.movie_page div.ratings > span.selected {
+  background-color: #008ece;
+  color: white;
+}

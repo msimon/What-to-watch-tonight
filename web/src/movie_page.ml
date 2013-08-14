@@ -48,13 +48,18 @@
 
     let m_uid = uid_of_service s in
     lwt m = %fetch_movie m_uid in
-    Lwt.async (
-      fun _ ->
-        lwt r = %user_rating m_uid in
-        Balsa_log.debug "r = %d" r ;
-        update_rating (Some r);
-        Lwt.return_unit
-    );
+
+    S.iter (
+      function
+        | Some _ ->
+          Lwt.async (
+            fun _ ->
+              lwt r = %user_rating m_uid in
+              update_rating (Some r);
+              Lwt.return_unit
+          );
+        | None -> ()
+    ) Connection.connected;
 
     let pict_dom =
       match m.Movie_request.poster_path with
@@ -91,7 +96,7 @@
                 else []
               in
 
-              div [
+              div ~a:[ a_class ["ratings"]] [
                 span ~a:[ onclick 1; a_class (selected 1) ] [ pcdata "1" ];
                 span ~a:[ onclick 2; a_class (selected 2) ] [ pcdata "2" ];
                 span ~a:[ onclick 3; a_class (selected 3) ] [ pcdata "3" ];
@@ -137,7 +142,7 @@
           | _ -> false
 
       let dom = dom
-      let classes = []
+      let classes = [ "movie_page" ]
     end)
 
 }}

@@ -31,21 +31,25 @@
       R.node (
         S.map (
           fun p ->
+            let selected p_ =
+              if p = p_ then [ "selected" ]
+              else []
+            in
             ul [
               li [
-                Path.a ~service:Path.What_to_watch ~a:[ a_class [ if p = Path.What_to_watch then "selected" else "" ]] [
+                Path.a ~service:Path.What_to_watch ~a:[ a_class (selected Path.What_to_watch) ] [
                   pcdata "What to Watch ?"
                 ];
                 span ~a:[ a_class ["vertical_sep"]] []
               ];
               li [
-                Path.a ~service:Path.Popular_movies ~a:[ a_class [ if p = Path.Popular_movies then "selected" else "" ]] [
+                Path.a ~service:Path.Popular_movies ~a:[ a_class (selected Path.Popular_movies) ] [
                   pcdata "Most Popular Movies"
                 ];
                 span ~a:[ a_class ["vertical_sep"]] []
               ];
               li [
-                Path.a ~service:Path.Taste_profile ~a:[ a_class [ if p = Path.Taste_profile then "selected" else "" ]] [
+                Path.a ~service:Path.Taste_profile ~a:[ a_class (selected Path.Taste_profile) ] [
                   pcdata "Taste Profile"
                 ];
                 span ~a:[ a_class ["vertical_sep"]] []

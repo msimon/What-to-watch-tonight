@@ -1,0 +1,15 @@
+div.movie_page {
+  div.ratings {
+    > span {
+      cursor: pointer ;
+      margin: 5px;
+      padding: 2px;
+      display:inline-block;
+
+      &:hover, &.selected {
+        background-color: $w2wt_blue;
+        color: white;
+      }
+    }
+  }
+}
