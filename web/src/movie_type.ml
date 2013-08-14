@@ -7,6 +7,7 @@
     value : float ;
   } deriving (Bson_ext)
 
+  (* /!\ title_search is not present here, but is in db *)
   type t = {
     uid: key ;
     title: string ;
@@ -37,8 +38,10 @@ let indexes () =
   let uid = (["uid"],[ Mongo_lwt.Unique true ]) in
   let vote_average = (["vote_average"],[]) in
   let vote_count = (["vote_count"],[]) in
+  (* /!\ title_search is not present here, but is in db *)
+  let title_index = (["title_search"], []) in
 
-  [ uid; vote_average; vote_count ]
+  [ uid; vote_average; vote_count; title_index ]
 
 let bson_uid (key : key) =
   Bson.create_int64 (Int64.of_int (Uid.get_value key))

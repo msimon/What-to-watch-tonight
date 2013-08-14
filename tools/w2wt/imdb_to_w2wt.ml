@@ -40,6 +40,7 @@ module Movie_w2wt = struct
   type movie = {
     uid: Uid.movie Uid.uid ;
     title: string ;
+    title_search: string list ;
     original_title : string option ;
     overview : string option ;
     poster_path : string option ;
@@ -81,6 +82,41 @@ module User_w2wt = struct
     vector : param list ;
   } deriving (Bson_ext)
 end
+
+let remove_useless_space =
+  let rex1 = Pcre.regexp " +"  in
+  let rex2 = Pcre.regexp "^ | $" in
+  let itempl_empty = Pcre.subst "" in
+  let itempl_space = Pcre.subst " " in
+  (fun s ->
+     let s = Pcre.replace ~rex:rex1 ~itempl:itempl_space s in
+     let s = Pcre.replace ~rex:rex2 ~itempl:itempl_empty s in
+     s)
+
+let split ch s =
+  let s = remove_useless_space s in
+  let s = Printf.sprintf "%s%c" s ch in
+  let x = ref [] in
+  let i = ref 0 in
+  let l = String.length s in
+  while !i < l do
+    let pos = String.index_from s !i ch in
+    x := (String.sub s !i (pos - !i))::!x;
+    i:=pos+1
+  done;
+  List.rev (!x)
+
+let remove_useless_word =
+  let dic = [ "an"; "a"; "of"; "to"; "the"; "in"; "on"; "-"; "_"; "+"; "and"; "for"; "is"; "are" ] in
+  (fun l ->
+     List.fold_left (
+       fun acc s ->
+         let s = String.lowercase s in
+         if List.mem s dic then acc
+         else s::acc
+     ) [] l
+  )
+
 
 let movie config mongo_genre u =
   lwt mongo = Mongo.create config.database.ip config.database.port config.database.name "movies" in
@@ -133,6 +169,7 @@ let movie config mongo_genre u =
             Lwt.return ({
                 Movie_w2wt.uid = movie_uid ;
                 title = m.Movie_api.title ;
+                title_search = remove_useless_word (split ' ' m.Movie_api.title) ;
                 original_title =
                   if m.Movie_api.title = m.Movie_api.original_title then None
                   else Some m.Movie_api.original_title ;
