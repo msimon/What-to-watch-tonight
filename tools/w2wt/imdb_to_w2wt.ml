@@ -180,7 +180,7 @@ let movie config mongo_genre u =
                 release_date = m.Movie_api.release_date ;
                 tagline = m.Movie_api.tagline ;
                 vote_average = float_of_int (rating.Rating_w2wt.rating) ;
-                vote_count = m.Movie_api.vote_count ;
+                vote_count = 1 (* m.Movie_api.vote_count *) ;
                 genres ;
                 vector = [] ;
               }::acc)
