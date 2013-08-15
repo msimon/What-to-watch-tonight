@@ -107,7 +107,6 @@
         )
       in
 
-
       div [
         h1 [ pcdata m.title ];
         rating_dom ;

@@ -27,10 +27,10 @@ module type Make =
     val find: key -> t Lwt.t
 
     val query_one_no_cache : Bson.t -> t option Lwt.t
-    val query_no_cache : ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
+    val query_no_cache : ?skip:int -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
 
     val query_one : ?force:bool -> Bson.t -> t option Lwt.t
-    val query : ?force:bool -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
+    val query : ?force:bool -> ?skip:int -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
 
     val insert: t -> unit Lwt.t
     val update: t -> unit Lwt.t
@@ -114,12 +114,12 @@ struct
       | h::_ -> Lwt.return (Some (Bson_utils_t.from_bson h))
 
 
-  let query_no_cache ?limit ?(full=false) bson_t =
+  let query_no_cache ?skip ?limit ?(full=false) bson_t =
     lwt mongo = Lazy.force mongo in
     lwt r =
       match limit with
-        | Some l -> Mongo_lwt.find_q_of_num mongo bson_t l
-        | None -> Mongo_lwt.find_q mongo bson_t
+        | Some l -> Mongo_lwt.find_q_of_num ?skip mongo bson_t l
+        | None -> Mongo_lwt.find_q ?skip mongo bson_t
     in
 
     let fetch_one_batch ?(acc=[]) r =
@@ -166,20 +166,20 @@ struct
       Lwt.return r
 
 
-  let query ?(force=false) ?limit ?(full=false) bson_t =
+  let query ?(force=false) ?skip ?limit ?(full=false) bson_t =
     try
       if force then raise Reload_cache ;
 
-      let (r,t) = Hashtbl.find query_htbl (limit,full,bson_t) in
+      let (r,t) = Hashtbl.find query_htbl (skip,limit,full,bson_t) in
       let n = int_of_float (Unix.time ()) in
 
       if n > t then (raise Reload_cache)
       else Lwt.return r
 
     with Not_found | Reload_cache ->
-      lwt r = query_no_cache ?limit ~full bson_t in
+      lwt r = query_no_cache ?skip ?limit ~full bson_t in
       let t = int_of_float (Unix.time ()) + (Balsa_config.get_int "db.query_cache_lifetime") in
-      Hashtbl.replace query_htbl (limit,full,bson_t) (r,t);
+      Hashtbl.replace query_htbl (skip,limit,full,bson_t) (r,t);
       Lwt.return r
 
   (* insert/update/delete must wait for the db to be ready *)

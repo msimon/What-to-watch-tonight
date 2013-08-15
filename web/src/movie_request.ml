@@ -46,7 +46,7 @@ end
 module DB_r = Db_request.Make (M)
 include DB_r
 
-let most_popular () =
+let most_popular ?skip ?(limit=100) () =
   (* order by vote average and vote_count *)
   let orderBy =
     let q = Bson.add_element "vote_average" (Bson.create_int32 (-1l)) Bson.empty in
@@ -58,7 +58,7 @@ let most_popular () =
   (* limit to vote_average that are higher than 3.5 *)
   let query = MongoMetaOp.min (Bson.add_element "vote_average" (Bson.create_double 3.5) Bson.empty) query in
 
-  lwt l = Db.Movie.query ~limit:100 ~full:true query in
+  lwt l = Db.Movie.query ?skip ~limit:100 ~full:true query in
   list_to_client l
 
 
