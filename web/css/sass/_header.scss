@@ -7,6 +7,7 @@
 
   @media (min-width: #{$min_width}px) {
     position: fixed;
+    z-index: 100;
     left: #{$full_container_padding}px;
     right: #{$full_container_padding}px;
   }

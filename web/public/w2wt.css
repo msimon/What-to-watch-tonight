@@ -266,6 +266,7 @@ body {
 /* line 16, ../sass/_container.scss */
 .fixed_header_hide {
   position: fixed;
+  z-index: 100;
   height: 20px;
   top: 0;
   left: 20px;
@@ -287,20 +288,21 @@ body {
   /* line 1, ../sass/_header.scss */
   .header {
     position: fixed;
+    z-index: 100;
     left: 20px;
     right: 20px;
   }
 }
-/* line 16, ../sass/_header.scss */
+/* line 17, ../sass/_header.scss */
 .header > div {
   height: 100%;
   float: left;
 }
-/* line 20, ../sass/_header.scss */
+/* line 21, ../sass/_header.scss */
 .header > div.logo {
   width: 137px;
 }
-/* line 22, ../sass/_header.scss */
+/* line 23, ../sass/_header.scss */
 .header > div.logo a {
   font-family: forgotten_futurist_shadow;
   font-size: 31px;
@@ -309,21 +311,21 @@ body {
   position: relative;
   top: 4px;
 }
-/* line 32, ../sass/_header.scss */
+/* line 33, ../sass/_header.scss */
 .header > div.last {
   float: right;
   width: 450px;
 }
-/* line 36, ../sass/_header.scss */
+/* line 37, ../sass/_header.scss */
 .header > div.last > div:first-child {
   height: 100%;
   float: left;
 }
-/* line 39, ../sass/_header.scss */
+/* line 40, ../sass/_header.scss */
 .header > div.last > div:first-child div.autocp {
   display: inline-block;
 }
-/* line 41, ../sass/_header.scss */
+/* line 42, ../sass/_header.scss */
 .header > div.last > div:first-child div.autocp > input {
   width: 230px;
   height: 23px;
@@ -334,7 +336,7 @@ body {
   padding-left: 3px;
   padding-right: 20px;
 }
-/* line 51, ../sass/_header.scss */
+/* line 52, ../sass/_header.scss */
 .header > div.last > div:first-child div.autocp > ul {
   position: absolute;
   width: 256px;
@@ -343,25 +345,25 @@ body {
   -moz-box-shadow: #cccccc 0px 4px 10px 2px;
   box-shadow: #cccccc 0px 4px 10px 2px;
 }
-/* line 58, ../sass/_header.scss */
+/* line 59, ../sass/_header.scss */
 .header > div.last > div:first-child div.autocp > ul > li {
   cursor: pointer;
   padding: 5px;
   font-family: arial, helvetica, clean, sans-serif;
 }
-/* line 62, ../sass/_header.scss */
+/* line 63, ../sass/_header.scss */
 .header > div.last > div:first-child div.autocp > ul > li.highlighted, .header > div.last > div:first-child div.autocp > ul > li:hover {
   background-color: #CCC;
   color: #008ece;
 }
-/* line 70, ../sass/_header.scss */
+/* line 71, ../sass/_header.scss */
 .header > div.last > div:first-child span.search_icon {
   color: #cccccc;
   position: relative;
   left: -20px;
   top: 2px;
 }
-/* line 78, ../sass/_header.scss */
+/* line 79, ../sass/_header.scss */
 .header > div.last div:last-child {
   height: 100%;
   float: left;
@@ -371,11 +373,11 @@ body {
   background-image: -webkit-linear-gradient(left, #0080c0, #008ece);
   cursor: pointer;
 }
-/* line 88, ../sass/_header.scss */
+/* line 89, ../sass/_header.scss */
 .header > div.last div:last-child:hover {
   background-image: -webkit-linear-gradient(left, #009fdf, #0090d0);
 }
-/* line 92, ../sass/_header.scss */
+/* line 93, ../sass/_header.scss */
 .header > div.last div:last-child > span {
   margin-left: 7px;
   color: white;
@@ -386,15 +388,15 @@ body {
   max-width: 106px;
   display: inline-block;
 }
-/* line 103, ../sass/_header.scss */
+/* line 104, ../sass/_header.scss */
 .header > div.last div:last-child > * {
   vertical-align: middle;
 }
-/* line 110, ../sass/_header.scss */
+/* line 111, ../sass/_header.scss */
 .header > div.section ul {
   height: 100%;
 }
-/* line 112, ../sass/_header.scss */
+/* line 113, ../sass/_header.scss */
 .header > div.section ul li {
   height: 100%;
   font-family: arial, helvetica, clean, sans-serif;
@@ -405,35 +407,35 @@ body {
   padding: 0 15px;
   text-align: center;
 }
-/* line 123, ../sass/_header.scss */
+/* line 124, ../sass/_header.scss */
 .header > div.section ul li > a {
   color: #dddddd;
   display: inline-block;
 }
-/* line 124, ../sass/_header.scss */
+/* line 125, ../sass/_header.scss */
 .header > div.section ul li > a:hover, .header > div.section ul li > a.selected {
   color: white;
 }
-/* line 131, ../sass/_header.scss */
+/* line 132, ../sass/_header.scss */
 .header > div.section ul li > * {
   vertical-align: middle;
 }
 @media (min-width: 1200px) {
-  /* line 109, ../sass/_header.scss */
+  /* line 110, ../sass/_header.scss */
   .header > div.section {
     width: 48%;
   }
-  /* line 139, ../sass/_header.scss */
+  /* line 140, ../sass/_header.scss */
   .header > div.section ul li {
     width: 26%;
   }
 }
 @media (max-width: 1200px) {
-  /* line 109, ../sass/_header.scss */
+  /* line 110, ../sass/_header.scss */
   .header > div.section {
     width: 35%;
   }
-  /* line 145, ../sass/_header.scss */
+  /* line 146, ../sass/_header.scss */
   .header > div.section ul li {
     width: 21%;
   }
@@ -450,4 +452,99 @@ div.movie_page div.ratings > span {
 div.movie_page div.ratings > span:hover, div.movie_page div.ratings > span.selected {
   background-color: #008ece;
   color: white;
+}
+
+/* line 5, ../sass/_popular.scss */
+div.popular_movies div.movie_list {
+  width: 100%;
+  overflow: hidden;
+}
+/* line 9, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in {
+  margin-right: -40px;
+}
+/* line 12, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie {
+  padding: 0 40px 20px 0;
+  display: inline-block;
+  text-align: left;
+  position: relative;
+  width: 185px;
+  height: 280px;
+  vertical-align: top;
+}
+/* line 22, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie.last > div > div.movie_info {
+  left: -360px;
+}
+/* line 29, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div:hover > div.movie_info {
+  visibility: visible;
+}
+/* line 34, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_cover {
+  width: 185px;
+  height: 280px;
+  overflow: hidden;
+}
+/* line 40, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info {
+  width: 0;
+  height: 0;
+  position: absolute;
+  top: 25px;
+  left: 205px;
+  visibility: hidden;
+  -webkit-transition: visibility 0 ease;
+  -webkit-transition-delay: 0.25s;
+  -moz-transition: visibility 0 ease 0.25s;
+  -o-transition: visibility 0 ease 0.25s;
+  transition: visibility 0 ease 0.25s;
+}
+/* line 51, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div {
+  width: 315px;
+  margin: 0 15px;
+  background-color: white;
+  position: relative;
+  z-index: 10;
+  border: 1px solid #e1e1e1;
+  -webkit-box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px 2px;
+  -moz-box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px 2px;
+  box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px 2px;
+}
+/* line 61, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_title {
+  background-color: #008ece;
+  height: 45px;
+}
+/* line 64, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_title h3 {
+  padding: 7px 7px 0 7px;
+}
+/* line 66, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_title h3 a {
+  color: white;
+  font-size: 19px;
+  font-family: arial, helvetica, clean, sans-serif;
+  font-weight: bold;
+}
+/* line 71, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_title h3 a:hover {
+  text-decoration: underline;
+}
+/* line 78, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_description {
+  padding: 15px;
+  font-size: 12px;
+  font-family: arial, helvetica, clean, sans-serif;
+}
+/* line 83, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_description > a.more_info_link {
+  color: #008ece;
+  font-size: 13px;
+}
+/* line 84, ../sass/_popular.scss */
+div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_description > a.more_info_link:hover {
+  text-decoration: underline;
 }

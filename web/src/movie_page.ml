@@ -37,7 +37,7 @@
 
   open Balsa_react
 
-  let dom s =
+  let dom s _ =
     let open Movie_request in
 
     let rating,update_rating = S.create None in

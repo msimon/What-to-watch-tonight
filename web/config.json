@@ -24,10 +24,12 @@
 
   "default_movie_img": "/img/default_movie_img.jpeg",
   "facebook.perms" : "email,user_likes",
+  "movie_list.single_movie_width" : 225,
 
   "export-to-client" : [
     "default_movie_img",
     "fb.app-id",
-    "facebook.perms"
+    "facebook.perms",
+    "movie_list.single_movie_width"
   ]
 }
