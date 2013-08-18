@@ -45,7 +45,14 @@ let load_movies config mongodb action =
 
   let thread_pool = Lwt_pool.create config.max_connections (fun _ -> Lwt.return_unit) in
 
-  let rec fetch_in uid =
+  let uid = ref 1 in
+  let next_uid () =
+    incr(uid);
+    !uid
+  in
+
+  let rec fetch_in () =
+    let uid = next_uid () in
     let call () =
       Printf.printf "query : %d\n%!" uid;
       lwt m = Db.fetch_movie_str config uid in
@@ -65,24 +72,22 @@ let load_movies config mongodb action =
                   let query = Bson.add_element "id" (Bson.create_int32 (Int32.of_int uid)) Bson.empty in
                   lwt r = Mongo.find_q_one mongodb query in
                   if MongoReply.get_num_returned r = 0l then begin
-                    Printf.printf "Not found: %d\n" uid;
                     call ()
                   end else begin
-                    Printf.printf "Found: %d\n" uid;
                     Lwt.return_unit
                   end
                 | _ -> call ()
             with _ ->
               Lwt.return_unit
         ) in
-      fetch_in (uid + config.max_connections)
+      fetch_in ()
     end
   in
 
   let rec generate_thread n acc =
     if n > config.max_connections then acc
     else
-      generate_thread (n + 1) (fetch_in (from_id + n)::acc)
+      generate_thread (n + 1) (fetch_in ()::acc)
   in
 
   (* we join all connection thread together *)
