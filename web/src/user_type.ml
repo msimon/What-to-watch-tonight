@@ -10,7 +10,7 @@
   type facebook = {
     facebook_uid : string ;
     facebook_access_token : string ;
-    facebook_access_token_expire_on : int ;
+    facebook_access_token_expire_on : int64 ;
   } deriving (Bson_ext)
 
   type t = {

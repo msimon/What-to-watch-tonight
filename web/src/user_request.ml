@@ -50,7 +50,7 @@ let facebook_sign_in (fb_id, access_token) =
           User_type.facebook = Some {
           User_type.facebook_uid = fb_id ;
           facebook_access_token = access_token ;
-          facebook_access_token_expire_on = expired_in ;
+          facebook_access_token_expire_on = Int64.of_int expired_in ;
         }
       } in
 
@@ -68,7 +68,7 @@ let facebook_sign_in (fb_id, access_token) =
         facebook = Some ({
             User_type.facebook_uid = fb_id ;
             facebook_access_token = access_token ;
-            facebook_access_token_expire_on = expired_in ;
+            facebook_access_token_expire_on = Int64.of_int expired_in ;
           }) ;
         vector = [];
       } in
