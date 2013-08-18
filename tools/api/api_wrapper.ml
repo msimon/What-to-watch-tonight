@@ -80,7 +80,7 @@ let load_movies config mongodb action =
   in
 
   let rec generate_thread n acc =
-    if n >= config.max_connections then acc
+    if n > config.max_connections then acc
     else
       generate_thread (n + 1) (fetch_in (from_id + n)::acc)
   in
