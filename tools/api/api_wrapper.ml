@@ -64,8 +64,13 @@ let load_movies config mongodb action =
                   (* check if id is in movie collection *)
                   let query = Bson.add_element "id" (Bson.create_int32 (Int32.of_int uid)) Bson.empty in
                   lwt r = Mongo.find_q_one mongodb query in
-                  if MongoReply.get_num_returned r = 0l then call ()
-                  else Lwt.return_unit
+                  if MongoReply.get_num_returned r = 0l then begin
+                    Printf.printf "Not found: %d\n" uid;
+                    call ()
+                  end else begin
+                    Printf.printf "Found: %d\n" uid;
+                    Lwt.return_unit
+                  end
                 | _ -> call ()
             with _ ->
               Lwt.return_unit
