@@ -64,8 +64,8 @@ let load_movies config mongodb action =
                   (* check if id is in movie collection *)
                   let query = Bson.add_element "id" (Bson.create_int32 (Int32.of_int uid)) Bson.empty in
                   lwt r = Mongo.find_q_one mongodb query in
-                  if MongoReply.get_num_returned r = 0l then Lwt.return_unit
-                  else call ()
+                  if MongoReply.get_num_returned r = 0l then call ()
+                  else Lwt.return_unit
                 | _ -> call ()
             with _ ->
               Lwt.return_unit
@@ -110,6 +110,10 @@ let load_genres config mongodb =
 let run action =
   let config = Config.init () in
   lwt mongodb = Mongo.create config.database.ip config.database.port config.database.name config.database.collection in
+
+  lwt _ =
+    Mongo.ensure_simple_index ~options:[ Mongo.Unique true; Mongo.DropDups true ] mongodb "id"
+  in
 
   lwt md_conf = Db.fetch_moviedb_configuration config in
   lwt _ =
