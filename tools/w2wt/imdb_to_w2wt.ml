@@ -19,6 +19,7 @@ end
 module Movie_api = struct
   type movie = {
     id: int ;
+    adult : bool ;
     title: string;
     original_title: string ;
     overview: string option ;
@@ -47,9 +48,10 @@ module Movie_w2wt = struct
     release_date: string ;
     tagline : string option ;
     vote_average : float ;
-    vote_count : int ;
+    vote_count: int ;
     genres : int list ;
     vector : param list ;
+    imdb_uid: int ;
   } deriving (Bson_ext)
 end
 
@@ -134,56 +136,67 @@ let movie config mongo_genre u =
           fun acc d ->
             let m = Movie_api.Bson_utils_movie.from_bson d in
 
-            lwt genres =
-              Lwt_list.map_p (
-                fun g ->
-                  let bson = Bson.add_element "name" (Bson.create_string g.Genre_api.name) Bson.empty in
+            if m.Movie_api.adult then Lwt.return acc
+            else begin
+              try_lwt
+                lwt genres =
+                  Lwt_list.map_p (
+                    fun g ->
+                      if String.lowercase g.Genre_api.name = "erotic" then (failwith "Erotic movie") ;
 
-                  lwt r = Mongo.find_q_one mongo_genre bson in
-                  if MongoReply.get_num_returned r = 0l then begin
-                    let new_genre = {
-                      Genre_w2wt.uid = Uid.fresh_uid Uid.Genre;
-                      name = g.Genre_api.name;
-                    } in
+                      let bson = Bson.add_element "name" (Bson.create_string g.Genre_api.name) Bson.empty in
 
-                    lwt _ = Mongo.insert mongo_genre [ Genre_w2wt.Bson_utils_genre.to_bson new_genre ] in
-                    Lwt.return new_genre.Genre_w2wt.uid
-                  end else begin
-                    let d = List.nth (MongoReply.get_document_list r) 0 in
-                    let g_ = Genre_w2wt.Bson_utils_genre.from_bson d in
+                      lwt r = Mongo.find_q_one mongo_genre bson in
+                      if MongoReply.get_num_returned r = 0l then begin
+                        let new_genre = {
+                          Genre_w2wt.uid = Uid.fresh_uid Uid.Genre;
+                          name = g.Genre_api.name;
+                        } in
 
-                    Lwt.return g_.Genre_w2wt.uid
-                  end
-              ) m.Movie_api.genres
-            in
+                        lwt _ = Mongo.insert mongo_genre [ Genre_w2wt.Bson_utils_genre.to_bson new_genre ] in
+                        Lwt.return new_genre.Genre_w2wt.uid
+                      end else begin
+                        let d = List.nth (MongoReply.get_document_list r) 0 in
+                        let g_ = Genre_w2wt.Bson_utils_genre.from_bson d in
 
-            let movie_uid = Uid.fresh_uid Uid.Movie in
+                        Lwt.return g_.Genre_w2wt.uid
+                      end
+                  ) m.Movie_api.genres
+                in
 
-            let rating = {
-              Rating_w2wt.uid = Uid.fresh_uid Uid.Rating ;
-              user_uid = u.User_w2wt.uid ;
-              movie_uid ;
-              rating = int_of_float ((m.Movie_api.vote_average /. 2.) +. 0.5) ;
-            } in
+                let movie_uid = Uid.fresh_uid Uid.Movie in
 
-            lwt _ = Mongo.insert mongo_ratings [ Rating_w2wt.Bson_utils_rating.to_bson rating ] in
+                let rating = {
+                  Rating_w2wt.uid = Uid.fresh_uid Uid.Rating ;
+                  user_uid = u.User_w2wt.uid ;
+                  movie_uid ;
+                  rating = int_of_float ((m.Movie_api.vote_average /. 2.) +. 0.5) ;
+                } in
 
-            Lwt.return ({
-                Movie_w2wt.uid = movie_uid ;
-                title = m.Movie_api.title ;
-                title_search = remove_useless_word (split ' ' m.Movie_api.title) ;
-                original_title =
-                  if m.Movie_api.title = m.Movie_api.original_title then None
-                  else Some m.Movie_api.original_title ;
-                overview = m.Movie_api.overview ;
-                poster_path = m.Movie_api.poster_path ;
-                release_date = m.Movie_api.release_date ;
-                tagline = m.Movie_api.tagline ;
-                vote_average = float_of_int (rating.Rating_w2wt.rating) ;
-                vote_count = 1 (* m.Movie_api.vote_count *) ;
-                genres ;
-                vector = [] ;
-              }::acc)
+                if rating.Rating_w2wt.rating = 0 then (failwith "no enough rating");
+
+                lwt _ = Mongo.insert mongo_ratings [ Rating_w2wt.Bson_utils_rating.to_bson rating ] in
+
+                Lwt.return ({
+                    Movie_w2wt.uid = movie_uid ;
+                    title = m.Movie_api.title ;
+                    title_search = remove_useless_word (split ' ' m.Movie_api.title) ;
+                    original_title =
+                      if m.Movie_api.title = m.Movie_api.original_title then None
+                      else Some m.Movie_api.original_title ;
+                    overview = m.Movie_api.overview ;
+                    poster_path = m.Movie_api.poster_path ;
+                    release_date = m.Movie_api.release_date ;
+                    tagline = m.Movie_api.tagline ;
+                    vote_average = float_of_int (rating.Rating_w2wt.rating) ;
+                    vote_count = 1 (* m.Movie_api.vote_count *) ;
+                    genres ;
+                    vector = [] ;
+                    imdb_uid = m.Movie_api.id;
+                  }::acc)
+              with _ ->
+                Lwt.return acc
+            end
         ) acc ds
       in
 
