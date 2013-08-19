@@ -3,7 +3,7 @@
 
   (* n size vector, n = # gender in our case *)
   type param = {
-    genres_uid : Uid.genre Uid.uid ;
+    genre_uid : Uid.genre Uid.uid ;
     value : float ;
   } deriving (Bson_ext)
 

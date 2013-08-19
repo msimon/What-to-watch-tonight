@@ -1,3 +1,91 @@
+/* for popular movie and what to watch page  */
+@mixin movie_in_list {
+  div.movie_in_list {
+    padding: 0 40px 20px 0 ;
+    display: inline-block;
+    text-align: left ;
+    position: relative ;
+    width: #{$cover_width}px;
+    height: #{$cover_height}px;
+    vertical-align: top;
+
+    &.last {
+      > div > div.movie_info {
+        left : -360px;
+      }
+    }
+
+    > div {
+      &:hover {
+        > div.movie_info {
+          visibility: visible
+        }
+      }
+
+      > div.movie_cover {
+        width: #{$cover_width}px;
+        height: #{$cover_height}px;
+        overflow: hidden ;
+      }
+
+      > div.movie_info {
+        width: 0;
+        height: 0;
+        position: absolute;
+        top: 25px;
+        left: 205px;
+        visibility: hidden ;
+
+        @include single_transition(visibility,0,ease,0.25s);
+
+
+        > div {
+          width: 315px ;
+          margin: 0 15px;
+          background-color: white ;
+          position: relative ;
+          z-index: 10;
+          border: 1px solid $body_grey;
+
+          @include box-shadow(rgba(0,0,0,0.5) 0px 4px 10px 2px);
+
+          > div.movie_title {
+            background-color: $w2wt_blue ;
+            height: 45px ;
+            h3 {
+              padding: 7px 7px 0 7px;
+              a {
+                color: white ;
+                font-size: 19px ;
+                font-family: $basic_font ;
+                font-weight: bold ;
+                &:hover {
+                  text-decoration: underline ;
+                }
+              }
+            }
+          }
+
+          > div.movie_description {
+            padding: 15px ;
+            font-size: 12px ;
+            font-family: $basic_font ;
+
+            > a.more_info_link {
+              &:hover {
+                text-decoration: underline ;
+              }
+              color: $w2wt_blue ;
+              font-size: 13px ;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
 div.movie_page {
   div.ratings {
     > span {

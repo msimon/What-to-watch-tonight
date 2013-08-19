@@ -441,14 +441,15 @@ body {
   }
 }
 
-/* line 3, ../sass/_movie.scss */
+/* for popular movie and what to watch page  */
+/* line 91, ../sass/_movie.scss */
 div.movie_page div.ratings > span {
   cursor: pointer;
   margin: 5px;
   padding: 2px;
   display: inline-block;
 }
-/* line 9, ../sass/_movie.scss */
+/* line 97, ../sass/_movie.scss */
 div.movie_page div.ratings > span:hover, div.movie_page div.ratings > span.selected {
   background-color: #008ece;
   color: white;
@@ -463,8 +464,8 @@ div.popular_movies div.movie_list {
 div.popular_movies div.movie_list div.movie_list_in {
   margin-right: -40px;
 }
-/* line 12, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie {
+/* line 3, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list {
   padding: 0 40px 20px 0;
   display: inline-block;
   text-align: left;
@@ -473,22 +474,22 @@ div.popular_movies div.movie_list div.movie_list_in > div.movie {
   height: 280px;
   vertical-align: top;
 }
-/* line 22, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie.last > div > div.movie_info {
+/* line 13, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list.last > div > div.movie_info {
   left: -360px;
 }
-/* line 29, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div:hover > div.movie_info {
+/* line 20, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div:hover > div.movie_info {
   visibility: visible;
 }
-/* line 34, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_cover {
+/* line 25, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_cover {
   width: 185px;
   height: 280px;
   overflow: hidden;
 }
-/* line 40, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info {
+/* line 31, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info {
   width: 0;
   height: 0;
   position: absolute;
@@ -501,8 +502,8 @@ div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movi
   -o-transition: visibility 0 ease 0.25s;
   transition: visibility 0 ease 0.25s;
 }
-/* line 51, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div {
+/* line 42, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info > div {
   width: 315px;
   margin: 0 15px;
   background-color: white;
@@ -513,38 +514,161 @@ div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movi
   -moz-box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px 2px;
   box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px 2px;
 }
-/* line 61, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_title {
+/* line 52, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info > div > div.movie_title {
   background-color: #008ece;
   height: 45px;
 }
-/* line 64, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_title h3 {
+/* line 55, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info > div > div.movie_title h3 {
   padding: 7px 7px 0 7px;
 }
-/* line 66, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_title h3 a {
+/* line 57, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info > div > div.movie_title h3 a {
   color: white;
   font-size: 19px;
   font-family: arial, helvetica, clean, sans-serif;
   font-weight: bold;
 }
-/* line 71, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_title h3 a:hover {
+/* line 62, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info > div > div.movie_title h3 a:hover {
   text-decoration: underline;
 }
-/* line 78, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_description {
+/* line 69, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info > div > div.movie_description {
   padding: 15px;
   font-size: 12px;
   font-family: arial, helvetica, clean, sans-serif;
 }
-/* line 83, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_description > a.more_info_link {
+/* line 74, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info > div > div.movie_description > a.more_info_link {
   color: #008ece;
   font-size: 13px;
 }
-/* line 84, ../sass/_popular.scss */
-div.popular_movies div.movie_list div.movie_list_in > div.movie > div > div.movie_info > div > div.movie_description > a.more_info_link:hover {
+/* line 75, ../sass/_movie.scss */
+div.popular_movies div.movie_list div.movie_list_in div.movie_in_list > div > div.movie_info > div > div.movie_description > a.more_info_link:hover {
+  text-decoration: underline;
+}
+
+/* line 1, ../sass/_wtw.scss */
+div.wtw_page {
+  overflow: hidden;
+}
+/* line 4, ../sass/_wtw.scss */
+div.wtw_page h2 {
+  font-family: arial, helvetica, clean, sans-serif;
+  color: #2e2322;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+/* line 12, ../sass/_wtw.scss */
+div.wtw_page div.movie_list_nav {
+  cursor: pointer;
+  position: absolute;
+  z-index: 5;
+  width: 20px;
+  background-color: rgba(0, 0, 0, 0.4);
+  font-size: 25px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: -3px;
+}
+/* line 23, ../sass/_wtw.scss */
+div.wtw_page div.movie_list_nav.movie_next {
+  right: 20px;
+  padding: 125px 5px 125px 20px;
+}
+/* line 27, ../sass/_wtw.scss */
+div.wtw_page div.movie_list_nav.movie_prev {
+  padding: 125px 10px 125px 10px;
+}
+/* line 32, ../sass/_wtw.scss */
+div.wtw_page div.movie_list {
+  width: 3700px;
+  position: relative;
+}
+/* line 3, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list {
+  padding: 0 40px 20px 0;
+  display: inline-block;
+  text-align: left;
+  position: relative;
+  width: 185px;
+  height: 280px;
+  vertical-align: top;
+}
+/* line 13, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list.last > div > div.movie_info {
+  left: -360px;
+}
+/* line 20, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div:hover > div.movie_info {
+  visibility: visible;
+}
+/* line 25, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_cover {
+  width: 185px;
+  height: 280px;
+  overflow: hidden;
+}
+/* line 31, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info {
+  width: 0;
+  height: 0;
+  position: absolute;
+  top: 25px;
+  left: 205px;
+  visibility: hidden;
+  -webkit-transition: visibility 0 ease;
+  -webkit-transition-delay: 0.25s;
+  -moz-transition: visibility 0 ease 0.25s;
+  -o-transition: visibility 0 ease 0.25s;
+  transition: visibility 0 ease 0.25s;
+}
+/* line 42, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info > div {
+  width: 315px;
+  margin: 0 15px;
+  background-color: white;
+  position: relative;
+  z-index: 10;
+  border: 1px solid #e1e1e1;
+  -webkit-box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px 2px;
+  -moz-box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px 2px;
+  box-shadow: rgba(0, 0, 0, 0.5) 0px 4px 10px 2px;
+}
+/* line 52, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info > div > div.movie_title {
+  background-color: #008ece;
+  height: 45px;
+}
+/* line 55, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info > div > div.movie_title h3 {
+  padding: 7px 7px 0 7px;
+}
+/* line 57, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info > div > div.movie_title h3 a {
+  color: white;
+  font-size: 19px;
+  font-family: arial, helvetica, clean, sans-serif;
+  font-weight: bold;
+}
+/* line 62, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info > div > div.movie_title h3 a:hover {
+  text-decoration: underline;
+}
+/* line 69, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info > div > div.movie_description {
+  padding: 15px;
+  font-size: 12px;
+  font-family: arial, helvetica, clean, sans-serif;
+}
+/* line 74, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info > div > div.movie_description > a.more_info_link {
+  color: #008ece;
+  font-size: 13px;
+}
+/* line 75, ../sass/_movie.scss */
+div.wtw_page div.movie_list div.movie_in_list > div > div.movie_info > div > div.movie_description > a.more_info_link:hover {
   text-decoration: underline;
 }

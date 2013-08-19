@@ -21,9 +21,14 @@
 
   "fb.app-id": "158855507642102",
   "fb.app-secret": "f428bf01e954e81349ba738979096d4f",
+  "facebook.perms" : "email,user_likes",
+
+  "minimum_rating_for_suggestion" : 15,
+  "nb_movie_by_genre" : 13,
+  "min_nb_movie_by_genre": 10,
 
   "default_movie_img": "/img/default_movie_img.jpeg",
-  "facebook.perms" : "email,user_likes",
+
   "movie_list.single_movie_width" : 225,
 
   "export-to-client" : [

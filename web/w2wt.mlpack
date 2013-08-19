@@ -18,6 +18,7 @@ src/service
 
 src/main_client
 src/img_gen
+src/dom_gen
 src/connection
 src/path
 src/page
@@ -25,3 +26,4 @@ src/page
 src/header
 src/popular_page
 src/movie_page
+src/what_to_watch_page

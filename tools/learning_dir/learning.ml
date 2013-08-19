@@ -2,7 +2,7 @@ module Param =
 struct
   (* n size vector, n = # gender in our case *)
   type param = {
-    genres_uid : int ;
+    genre_uid : int ;
     value : float ;
   } deriving (Bson_ext)
 end
@@ -76,7 +76,7 @@ let init_vector =
       Hashtbl.fold (
         fun genre_uid _ acc ->
           {
-            Param.genres_uid = genre_uid ;
+            Param.genre_uid = genre_uid ;
             Param.value = rand ();
           }::acc
       ) genre_htbl []
@@ -209,7 +209,7 @@ let cost vect rating =
 
   let v = List.fold_left2 (
       fun cost u m ->
-        if (u.genres_uid <> m.genres_uid) then
+        if (u.genre_uid <> m.genre_uid) then
           failwith "u and m have differente genre_uid..."
         else
           cost +. (u.value *. m.value)
@@ -420,7 +420,7 @@ let gradient_descent config =
       Printf.printf "\ndisplay: %d\n%!" u_uid;
       List.iteri (
         fun i v ->
-          Printf.printf "%d: uid: %d =>  %.3f\n%!" i v.Param.genres_uid v.Param.value ;
+          Printf.printf "%d: uid: %d =>  %.3f\n%!" i v.Param.genre_uid v.Param.value ;
       ) user.User.vector
   ) user_htbl
 

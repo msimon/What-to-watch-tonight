@@ -38,6 +38,8 @@ module type Make =
 
     val find_and_update: key -> (t -> t) -> unit Lwt.t
 
+    val count : ?skip: int -> ?limit: int -> ?query: int -> unit -> int
+
 end
 
 module Make (M : M) =
@@ -233,6 +235,9 @@ struct
          finalize ()
     )
 
+  let count ?skip ?limit ?query () =
+    lwt mongo = Lazy.force mongo in
+    Mongo_lwt.count ?skip ?limit ?query mongo
 
 end
 

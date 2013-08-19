@@ -68,84 +68,84 @@ let rate : Movie_type.key -> User_type.key -> int -> unit Lwt.t =
      m_n = ((n - 1) * m_n-1 + rating) / n
      => m_n = m_n-1 * (rating - m_n-1) / n (less floating point error)
   *)
-  let incremental_mean om oc rating =
-    let oc = float_of_int oc in
-    let rating = float_of_int rating in
-    om +. (rating -. om) /. (oc +. 1.)
-  in
-  (* remove a rating from the average *)
-  let old_mean mean c rating =
-    let c = float_of_int c in
-    let rating = float_of_int rating in
+    let incremental_mean om oc rating =
+      let oc = float_of_int oc in
+      let rating = float_of_int rating in
+      om +. (rating -. om) /. (oc +. 1.)
+    in
+    (* remove a rating from the average *)
+    let old_mean mean c rating =
+      let c = float_of_int c in
+      let rating = float_of_int rating in
 
-    (mean *. c -. rating) /. (c -. 1.)
-  in
+      (mean *. c -. rating) /. (c -. 1.)
+    in
 
-  let rating =
-    if rating < 0 then 0
-    else if rating > Balsa_config.get_int "max_rating_value" then Balsa_config.get_int "max_rating_value"
-    else rating
-  in
+    let rating =
+      if rating < 0 then 0
+      else if rating > Balsa_config.get_int "max_rating_value" then Balsa_config.get_int "max_rating_value"
+      else rating
+    in
 
-  lwt old_rating = Rating_request.get_rating Rating_request.Option m_uid u_uid in
+    lwt old_rating = Rating_request.get_rating Rating_request.Option m_uid u_uid in
 
-  let update_movie =
-    Db.Movie.find_and_update m_uid (
-      fun m ->
-        let open Movie_type in
+    let update_movie =
+      Db.Movie.find_and_update m_uid (
+        fun m ->
+          let open Movie_type in
 
-        let vote_average,vote_count =
-          match old_rating with
-            | Some old_rating ->
-              let om = old_mean m.vote_average m.vote_count old_rating.Rating_type.rating in
-              incremental_mean om (m.vote_count - 1) rating, m.vote_count
-            | None ->
-              incremental_mean m.vote_average m.vote_count rating, m.vote_count + 1
-        in
+          let vote_average,vote_count =
+            match old_rating with
+              | Some old_rating ->
+                let om = old_mean m.vote_average m.vote_count old_rating.Rating_type.rating in
+                incremental_mean om (m.vote_count - 1) rating, m.vote_count
+              | None ->
+                incremental_mean m.vote_average m.vote_count rating, m.vote_count + 1
+          in
 
-        {
-          m with
-            vote_average ;
-            vote_count ;
-        }
-    )
-  in
+          {
+            m with
+              vote_average ;
+              vote_count ;
+          }
+      )
+    in
 
-  let rating =
-    Balsa_option.case (
-      fun r -> { r with Rating_type.rating }
-    ) (fun _ ->
-        {
-          Rating_type.uid = Uid.fresh_uid Uid.Rating ;
-          movie_uid = m_uid ;
-          user_uid = u_uid ;
-          rating ;
-        }
-      ) old_rating
-  in
+    let rating =
+      Balsa_option.case (
+        fun r -> { r with Rating_type.rating }
+      ) (fun _ ->
+          {
+            Rating_type.uid = Uid.fresh_uid Uid.Rating ;
+            movie_uid = m_uid ;
+            user_uid = u_uid ;
+            rating ;
+          }
+        ) old_rating
+    in
 
-  let insert_rating =
-    Balsa_option.case
-      (fun old_rating -> Db.Rating.update rating)
-      (fun _ -> Db.Rating.insert rating)
-      old_rating
-  in
+    let insert_rating =
+      Balsa_option.case
+        (fun old_rating -> Db.Rating.update rating)
+        (fun _ -> Db.Rating.insert rating)
+        old_rating
+    in
 
-  let update_user =
-    Db.User.find_and_update u_uid (
-      fun u ->
-        User_type.({
-            u with
-              ratings = Balsa_list.cons_u rating.Rating_type.uid u.ratings;
-          })
-    )
-  in
+    let update_user =
+      Db.User.find_and_update u_uid (
+        fun u ->
+          User_type.({
+              u with
+                ratings = Balsa_list.cons_u rating.Rating_type.uid u.ratings;
+            })
+      )
+    in
 
-  Lwt.join [
-    update_movie ;
-    update_user ;
-    insert_rating ;
-  ]
+    Lwt.join [
+      update_movie ;
+      update_user ;
+      insert_rating ;
+    ]
 
 let search prefix =
   (* read http://docs.mongodb.org/manual/reference/operator/regex/ before changing regexp.
@@ -163,6 +163,75 @@ let search prefix =
   in
 
   let query = Bson.add_element "$and" (Bson.create_list queries) Bson.empty in
-  lwt ml = Db.Movie.query ~limit:(Balsa_config.get_int "autocomplete.movie.nb_return") query in
+
+  let query_ordered = MongoMetaOp.orderBy (Bson.add_element "vote_count" (Bson.create_int32 (-1l)) Bson.empty) query in
+  lwt ml = Db.Movie.query ~limit:(Balsa_config.get_int "autocomplete.movie.nb_return") query_ordered in
 
   list_to_client ml
+
+
+let what_to_watch u_uid_opt =
+  let _suggestion () = ()in
+
+  let movie_genre () =
+    let rec build_paralel_query acc =
+      function
+        | [] -> acc
+        | g::t ->
+          let genre_uid = g.Genre_type.uid in
+
+          (* we select movie that have this genre, then sort it by vote_count and vote_average *)
+          let query = Bson.add_element "genres" (Bson.create_int64 (Int64.of_int (Uid.get_value genre_uid))) Bson.empty in
+          let orderby = Bson.add_element "vote_average" (Bson.create_int32 (-1l)) Bson.empty in
+          let orderby = Bson.add_element "vote_count" (Bson.create_int32 (-1l)) orderby in
+
+          let query_ordered = MongoMetaOp.orderBy orderby query in
+          let query_min_ordered = MongoMetaOp.min (Bson.add_element "vote_average" (Bson.create_double 3.5) Bson.empty) query_ordered in
+
+          let movie_query =
+            lwt movie = Db.Movie.query ~limit:(Balsa_config.get_int "nb_movie_by_genre") query_min_ordered in
+            Lwt.return (g, movie)
+          in
+          build_paralel_query (movie_query::acc) t
+    in
+
+    let rec read_queries acc queries =
+      lwt (res_list, thread_list) = Lwt.nchoose_split queries in
+      let res_list =
+        List.filter (
+          fun (_,movie_list) -> List.length movie_list > (Balsa_config.get_int "min_nb_movie_by_genre")
+        ) res_list
+      in
+
+      let acc = res_list @ acc in
+
+      if Balsa_list.is_empty thread_list then Lwt.return acc
+      else
+        read_queries acc thread_list
+    in
+
+    lwt genres = Db.Genre.query Bson.empty in
+    let queries = build_paralel_query [] genres in
+
+    lwt l = read_queries [] queries in
+    lwt l = Lwt_list.map_s (
+      fun (g,m_l) ->
+        lwt g = Genre_request.to_client g in
+        lwt m_l = list_to_client m_l in
+        Lwt.return (g,m_l)
+    ) l in
+
+    Lwt.return l
+  in
+
+  match u_uid_opt with
+    | Some u_uid ->
+      lwt u = Db.User.find u_uid in
+      let rating_nb = List.length u.User_type.ratings in
+      if rating_nb < Balsa_config.get_int "minimum_rating_for_suggestion" then
+        (* load movie by genres since user didn't rate enough movie *)
+        movie_genre ()
+      else
+        movie_genre () (* to replace by suggestion *)
+    | None ->
+      movie_genre ()
