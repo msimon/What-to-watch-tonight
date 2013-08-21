@@ -190,16 +190,19 @@ let movie config mongo_genre u =
                 let check_movie = Bson.add_element "imdb_uid" (Bson.create_int32 (Int32.of_int m.Movie_api.id)) Bson.empty in
                 lwt r = Mongo.find_q_one mongo_w2wt_movie check_movie in
                 if MongoReply.get_num_returned r = 0l then begin
+
+                  let rating = int_of_float ((m.Movie_api.vote_average /. 2.) +. 0.5) in
+
+                  if rating = 0 then (failwith "no enough rating");
                   let movie_uid = Uid.fresh_uid Uid.Movie in
 
                   let rating = {
                     Rating_w2wt.uid = Uid.fresh_uid Uid.Rating ;
                     user_uid = u.User_w2wt.uid ;
                     movie_uid ;
-                    rating = int_of_float ((m.Movie_api.vote_average /. 2.) +. 0.5) ;
+                    rating ;
                   } in
 
-                  if rating.Rating_w2wt.rating = 0 then (failwith "no enough rating");
 
                   lwt _ = Mongo.insert mongo_ratings [ Rating_w2wt.Bson_utils_rating.to_bson rating ] in
 
