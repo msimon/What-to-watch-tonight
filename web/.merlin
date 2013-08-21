@@ -1,0 +1,9 @@
+B _build/src/client
+B _build/src/server
+PKG mongo
+PKG bson
+PKG lwt
+PKG balsa.server
+PKG balsa.client
+PKG eliom.server
+PKG eliom.client
