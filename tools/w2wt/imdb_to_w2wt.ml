@@ -49,7 +49,7 @@ module Movie_w2wt = struct
     tagline : string option ;
     vote_average : float ;
     vote_count: int ;
-    genres : int list ;
+    genres : Uid.genre Uid.uid list ;
     vector : param list ;
     imdb_uid: int ;
   } deriving (Bson_ext)
@@ -121,11 +121,32 @@ let remove_useless_word =
      ) [] l
   )
 
+let setup_uid mongodb t =
+  let query = Bson.empty in
+  let query = MongoMetaOp.orderBy (Bson.add_element "uid" (Bson.create_int32 (-1l)) Bson.empty) query in
+  lwt r = Mongo.find_q_s_one mongodb query (Bson.add_element "uid" (Bson.create_int32 1l) Bson.empty) in
+  try
+    let e = List.nth (MongoReply.get_document_list r) 0 in
+    let uid = Int32.to_int (Bson.get_int32 (Bson.get_element "uid" e)) in
+    Uid.set_uid t (Uid.unsafe uid);
+    Lwt.return_unit
+  with _ -> Lwt.return_unit
+
 
 let movie config mongo_genre u =
+  (* set movie uid here *)
+
   lwt mongo = Mongo.create config.database.ip config.database.port config.database.name "movies" in
   lwt mongo_ratings = Mongo.create config.w2wt.ip config.w2wt.port config.w2wt.name "ratings" in
-  lwt _ = Mongo.ensure_simple_index mongo_ratings ~options:[ Mongo_lwt.Unique true ] "uid" in
+  lwt _ = Mongo.ensure_simple_index mongo_ratings ~options:[ Mongo.Unique true ] "uid" in
+
+  lwt mongo_w2wt_movie = Mongo.create config.w2wt.ip config.w2wt.port config.w2wt.name "movies" in
+  lwt _ = Mongo.ensure_simple_index ~options:[ Mongo_lwt.Unique true ] mongo_w2wt_movie "uid" in
+  lwt _ = Mongo.ensure_simple_index mongo_w2wt_movie "vote_average" in
+  lwt _ = Mongo.ensure_simple_index mongo_w2wt_movie "vote_count" in
+  lwt _ = Mongo.ensure_simple_index mongo_w2wt_movie ~options:[ Mongo.Unique true; Mongo.DropDups true ] "imdb_uid" in
+
+  lwt _ = setup_uid mongo Uid.Movie in
 
   let rec add_movie acc r =
     let ds = MongoReply.get_document_list r in
@@ -164,36 +185,42 @@ let movie config mongo_genre u =
                   ) m.Movie_api.genres
                 in
 
-                let movie_uid = Uid.fresh_uid Uid.Movie in
+                (* Check if movies exist, if it does raise "already inserted" ? *)
 
-                let rating = {
-                  Rating_w2wt.uid = Uid.fresh_uid Uid.Rating ;
-                  user_uid = u.User_w2wt.uid ;
-                  movie_uid ;
-                  rating = int_of_float ((m.Movie_api.vote_average /. 2.) +. 0.5) ;
-                } in
+                let check_movie = Bson.add_element "imdb_uid" (Bson.create_int32 (Int32.of_int m.Movie_api.id)) Bson.empty in
+                lwt r = Mongo.find_q_one mongo_w2wt_movie check_movie in
+                if MongoReply.get_num_returned r = 0l then begin
+                  let movie_uid = Uid.fresh_uid Uid.Movie in
 
-                if rating.Rating_w2wt.rating = 0 then (failwith "no enough rating");
+                  let rating = {
+                    Rating_w2wt.uid = Uid.fresh_uid Uid.Rating ;
+                    user_uid = u.User_w2wt.uid ;
+                    movie_uid ;
+                    rating = int_of_float ((m.Movie_api.vote_average /. 2.) +. 0.5) ;
+                  } in
 
-                lwt _ = Mongo.insert mongo_ratings [ Rating_w2wt.Bson_utils_rating.to_bson rating ] in
+                  if rating.Rating_w2wt.rating = 0 then (failwith "no enough rating");
 
-                Lwt.return ({
-                    Movie_w2wt.uid = movie_uid ;
-                    title = m.Movie_api.title ;
-                    title_search = remove_useless_word (split ' ' m.Movie_api.title) ;
-                    original_title =
-                      if m.Movie_api.title = m.Movie_api.original_title then None
-                      else Some m.Movie_api.original_title ;
-                    overview = m.Movie_api.overview ;
-                    poster_path = m.Movie_api.poster_path ;
-                    release_date = m.Movie_api.release_date ;
-                    tagline = m.Movie_api.tagline ;
-                    vote_average = float_of_int (rating.Rating_w2wt.rating) ;
-                    vote_count = 1 (* m.Movie_api.vote_count *) ;
-                    genres ;
-                    vector = [] ;
-                    imdb_uid = m.Movie_api.id;
-                  }::acc)
+                  lwt _ = Mongo.insert mongo_ratings [ Rating_w2wt.Bson_utils_rating.to_bson rating ] in
+
+                  Lwt.return ({
+                      Movie_w2wt.uid = movie_uid ;
+                      title = m.Movie_api.title ;
+                      title_search = remove_useless_word (split ' ' m.Movie_api.title) ;
+                      original_title =
+                        if m.Movie_api.title = m.Movie_api.original_title then None
+                        else Some m.Movie_api.original_title ;
+                      overview = m.Movie_api.overview ;
+                      poster_path = m.Movie_api.poster_path ;
+                      release_date = m.Movie_api.release_date ;
+                      tagline = m.Movie_api.tagline ;
+                      vote_average = float_of_int (rating.Rating_w2wt.rating) ;
+                      vote_count = 1 (* m.Movie_api.vote_count *) ;
+                      genres ;
+                      vector = [] ;
+                      imdb_uid = m.Movie_api.id;
+                    }::acc)
+                end else Lwt.return acc
               with _ ->
                 Lwt.return acc
             end
@@ -204,7 +231,6 @@ let movie config mongo_genre u =
       try_lwt
         add_movie movies r
       with exn ->
-        Printf.printf "exn : %s\n%!" (Printexc.to_string exn);
         raise Not_found
     end
   in
@@ -215,16 +241,10 @@ let movie config mongo_genre u =
 
   lwt _ = Mongo.destory mongo in
 
-  lwt mongo = Mongo.create config.w2wt.ip config.w2wt.port config.w2wt.name "movies" in
-  lwt _ = Mongo.ensure_simple_index ~options:[ Mongo_lwt.Unique true ] mongo "uid" in
-  lwt _ = Mongo.ensure_simple_index mongo "vote_average" in
-  lwt _ = Mongo.ensure_simple_index mongo "vote_count" in
-
-
   lwt _ =
     Lwt_list.iter_p (
       fun m ->
-        Mongo.insert mongo [ Movie_w2wt.Bson_utils_movie.to_bson m ]
+        Mongo.insert mongo_w2wt_movie [ Movie_w2wt.Bson_utils_movie.to_bson m ]
     ) movies
   in
 
@@ -235,19 +255,30 @@ let movie config mongo_genre u =
 let genre config =
   lwt mongo = Mongo.create config.database.ip config.database.port config.database.name "genres" in
 
+  lwt mongo_w2wt_genre = Mongo.create config.w2wt.ip config.w2wt.port config.w2wt.name "genres" in
+  lwt _ = Mongo.ensure_simple_index mongo ~options:[ Mongo_lwt.Unique true ] "uid" in
+
+  lwt _ = setup_uid mongo Uid.Genre in
+
   let rec add_genre acc r =
     let ds = MongoReply.get_document_list r in
     if MongoReply.get_num_returned r = 0l then Lwt.return acc
     else begin
-      let genres =
-        List.fold_left (
+      lwt genres =
+        Lwt_list.fold_left_s (
           fun acc d ->
             let g = Genre_api.Bson_utils_genre.from_bson d in
+            (* check if genre exist, if it does raise "genre exist" *)
 
-            {
-              Genre_w2wt.uid = Uid.fresh_uid Uid.Genre ;
-              name = g.Genre_api.name ;
-            }::acc
+            let bson = Bson.add_element "name" (Bson.create_string g.Genre_api.name) Bson.empty in
+
+            lwt r = Mongo.find_q_one mongo_w2wt_genre bson in
+            if MongoReply.get_num_returned r = 0l then begin
+              Lwt.return ({
+                  Genre_w2wt.uid = Uid.fresh_uid Uid.Genre ;
+                  name = g.Genre_api.name ;
+                }::acc)
+            end else Lwt.return acc
         ) acc ds
       in
 
@@ -262,8 +293,7 @@ let genre config =
 
   lwt _ = Mongo.destory mongo in
 
-  lwt mongo = Mongo.create config.w2wt.ip config.w2wt.port config.w2wt.name "genres" in
-  lwt _ = Mongo.ensure_simple_index mongo ~options:[ Mongo_lwt.Unique true ] "uid" in
+
   let genres_bson =
     List.map (
       fun g ->
@@ -271,26 +301,41 @@ let genre config =
     ) genres
   in
 
-  lwt _ = Mongo.insert mongo genres_bson in
+  lwt _ = Mongo.insert mongo_w2wt_genre genres_bson in
 
   (* Mongo.destory mongo *)
-  Lwt.return mongo
+  Lwt.return mongo_w2wt_genre
 
 
 let user config =
   lwt mongo = Mongo.create config.w2wt.ip config.w2wt.port config.w2wt.name "users" in
   lwt _ = Mongo.ensure_simple_index mongo ~options:[ Mongo_lwt.Unique true ] "uid" in
 
-  let moviedb_user = {
-    User_w2wt.uid = Uid.fresh_uid Uid.User ;
-    name = "themoviedb" ;
-    facebook = None ;
-    ratings = [] ;
-    vector = [] ;
-  } in
+  (* search themoviedb user do not add the user if it exist. Should it be removed ? *)
 
-  let bson_user = User_w2wt.Bson_utils_user.to_bson moviedb_user in
-  lwt _ = Mongo.insert mongo [ bson_user ] in
+  let check_user = Bson.add_element "name" (Bson.create_string "themoviedb") Bson.empty in
+  lwt r = Mongo.find_q_one mongo check_user in
+
+  lwt moviedb_user =
+    if MongoReply.get_num_returned r = 0l then begin
+      let moviedb_user = {
+        User_w2wt.uid = Uid.fresh_uid Uid.User ;
+        name = "themoviedb" ;
+        facebook = None ;
+        ratings = [] ;
+        vector = [] ;
+      } in
+
+      let bson_user = User_w2wt.Bson_utils_user.to_bson moviedb_user in
+      lwt _ = Mongo.insert mongo [ bson_user ] in
+      Lwt.return moviedb_user
+    end else begin
+      let d = List.nth (MongoReply.get_document_list r) 0 in
+      let moviedb_user = User_w2wt.Bson_utils_user.from_bson d in
+      Lwt.return moviedb_user
+    end
+  in
+
   lwt _ = Mongo.destory mongo in
 
   Lwt.return moviedb_user
