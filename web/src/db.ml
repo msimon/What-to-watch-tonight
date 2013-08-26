@@ -36,7 +36,7 @@ module type Make =
     val update: t -> unit Lwt.t
     val delete: t -> unit Lwt.t
 
-    val find_and_update: key -> (t -> t) -> unit Lwt.t
+    val find_and_update: key -> (t -> t) -> t Lwt.t
 
     val count : ?skip: int -> ?limit: int -> ?query: int -> unit -> int
 
@@ -98,7 +98,11 @@ struct
     let bson_search = M.search key in
 
     lwt r = Mongo_lwt.find_q_one mongo bson_search in
-    let d = List.nth (MongoReply.get_document_list r) 0 in
+
+    let d = match MongoReply.get_document_list r with
+      | [] -> raise Not_found
+      | h::_ -> h
+    in
 
     Lwt.return (Bson_utils_t.from_bson d)
 
@@ -165,6 +169,13 @@ struct
       lwt r = query_one_no_cache bson_t in
       let t = int_of_float (Unix.time ()) + (Balsa_config.get_int "db.query_cache_lifetime") in
       Hashtbl.replace query_one_htbl bson_t (r,t);
+
+      Balsa_option.iter (
+        fun t ->
+          cache#remove (M.key t) ;
+          cache#add (M.key t) t;
+      ) r;
+
       Lwt.return r
 
 
@@ -220,19 +231,22 @@ struct
   *)
   let find_and_update =
     let mutex = Lwt_mutex.create () in
-    let finalize () =
-      Lwt_mutex.unlock mutex;
-      Lwt.return_unit
-    in
+    (* let finalize () = *)
+    (*   Lwt_mutex.unlock mutex; *)
+    (*   Lwt.return_unit *)
+    (* in *)
     (fun key update_fun ->
        lwt _ = Lwt_mutex.lock mutex in
        lwt d = find key in
        try_lwt
          let d = update_fun d in
          lwt _ = update d in
-         finalize ()
-       with exn ->
-         finalize ()
+         Lwt_mutex.unlock mutex;
+         Lwt.return d
+       with
+         | exn ->
+           Lwt_mutex.unlock mutex;
+           raise exn
     )
 
   let count ?skip ?limit ?query () =

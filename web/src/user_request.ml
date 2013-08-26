@@ -45,16 +45,18 @@ let facebook_sign_in (fb_id, access_token) =
   match u with
     | Some u ->
       (* update the access token if the user already exist*)
-      let u = {
-        u with
-          User_type.facebook = Some {
-          User_type.facebook_uid = fb_id ;
-          facebook_access_token = access_token ;
-          facebook_access_token_expire_on = Int64.of_int expired_in ;
-        }
-      } in
 
-      lwt _ = Db.User.update u in
+      lwt u = Db.User.find_and_update u.User_type.uid (
+          fun u ->
+            {
+              u with
+                User_type.facebook = Some {
+                User_type.facebook_uid = fb_id ;
+                facebook_access_token = access_token ;
+                facebook_access_token_expire_on = Int64.of_int expired_in ;
+              }
+            }
+        ) in
 
       to_client u
 

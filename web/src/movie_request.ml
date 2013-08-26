@@ -90,25 +90,28 @@ let rate : Movie_type.key -> User_type.key -> int -> unit Lwt.t =
     lwt old_rating = Rating_request.get_rating Rating_request.Option m_uid u_uid in
 
     let update_movie =
-      Db.Movie.find_and_update m_uid (
-        fun m ->
-          let open Movie_type in
+      lwt _ =
+        Db.Movie.find_and_update m_uid (
+          fun m ->
+            let open Movie_type in
 
-          let vote_average,vote_count =
-            match old_rating with
-              | Some old_rating ->
-                let om = old_mean m.vote_average m.vote_count old_rating.Rating_type.rating in
-                incremental_mean om (m.vote_count - 1) rating, m.vote_count
-              | None ->
-                incremental_mean m.vote_average m.vote_count rating, m.vote_count + 1
-          in
+            let vote_average,vote_count =
+              match old_rating with
+                | Some old_rating ->
+                  let om = old_mean m.vote_average m.vote_count old_rating.Rating_type.rating in
+                  incremental_mean om (m.vote_count - 1) rating, m.vote_count
+                | None ->
+                  incremental_mean m.vote_average m.vote_count rating, m.vote_count + 1
+            in
 
-          {
-            m with
-              vote_average ;
-              vote_count ;
-          }
-      )
+            {
+              m with
+                vote_average ;
+                vote_count ;
+            }
+        )
+      in
+      Lwt.return_unit
     in
 
     let rating =
@@ -132,13 +135,16 @@ let rate : Movie_type.key -> User_type.key -> int -> unit Lwt.t =
     in
 
     let update_user =
-      Db.User.find_and_update u_uid (
-        fun u ->
-          User_type.({
-              u with
-                ratings = Balsa_list.cons_u rating.Rating_type.uid u.ratings;
-            })
-      )
+      lwt _ =
+        Db.User.find_and_update u_uid (
+          fun u ->
+            User_type.({
+                u with
+                  ratings = Balsa_list.cons_u rating.Rating_type.uid u.ratings;
+              })
+        )
+      in
+      Lwt.return_unit
     in
 
     Lwt.join [

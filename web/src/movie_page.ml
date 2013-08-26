@@ -21,8 +21,7 @@
       fun m_uid ->
         match_lwt Connection.get_uid () with
           | Some u_uid ->
-            lwt r = Rating_request.get_rating Rating_request.Exception m_uid u_uid in
-            Lwt.return r.Rating_type.rating
+            Rating_request.get_rating_value Rating_request.Exception m_uid u_uid
           | None ->
             raise Connection.Not_connected
     )
