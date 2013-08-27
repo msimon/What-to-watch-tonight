@@ -7,8 +7,7 @@ div.popular_movies {
     overflow:hidden ;
 
     div.movie_list_in {
-      margin-right: -40px;
-
+      margin: 0 auto ;
       @include movie_in_list ;
     }
   }

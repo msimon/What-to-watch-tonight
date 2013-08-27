@@ -15,7 +15,8 @@
 
   open Balsa_react
 
-  let single_movie_width = lazy(Balsa_config.get_int "movie_list.single_movie_width")
+  let single_movie_width = lazy (Balsa_config.get_int "movie_list.single_movie_width")
+  let min_movie_per_page = lazy (Balsa_config.get_int "movie_list.min_movie_per_page")
 
   let dom _ _ =
     let open Movie_request in
@@ -30,7 +31,9 @@
         ~generate_dom:Dom_gen.movie_dom
     in
 
-    let movies_dom = div ~a:[ a_class ["movie_list_in"]] [] in
+    let width_stl,update_width_stl = S.create "100%" in
+
+    let movies_dom = div ~a:[ R.a_style width_stl; a_class ["movie_list_in"]] [] in
     E.iter (
       fun l ->
         List.iter (
@@ -46,16 +49,29 @@
           fun _ ->
             let w = Manip.Attr.offsetWidth movies_dom in
             let nb_display = w / (Lazy.force single_movie_width) in
-            let i = ref 0 in
 
+            let movies_width = nb_display * Lazy.force single_movie_width in
+            let movies_width_p1 = (nb_display + 1) * Lazy.force single_movie_width in
+            let movies_width_m1 = (nb_display - 1) * Lazy.force single_movie_width in
+
+            let page_width = Balsa_dom.get_browser_page_width () in
+            if movies_width > page_width && nb_display > Lazy.force min_movie_per_page then
+              update_width_stl (Printf.sprintf "width:%dpx" movies_width_m1)
+            else if movies_width < page_width && movies_width_p1 < page_width then
+              update_width_stl (Printf.sprintf "width:%dpx" movies_width_p1)
+            else
+              update_width_stl (Printf.sprintf "width:%dpx" movies_width);
+
+            let i = ref 0 in
             Balsa_dom.iter_on_children (
               fun el ->
                 let el = Html5.Of_dom.of_element el in
                 if (nb_display - (!i mod nb_display) - 1) < 2 then Html5.Manip.Class.add el "last"
                 else Html5.Manip.Class.remove el "last";
                 incr(i);
-            ) movies_dom
-        ) Balsa_dom.window_size;
+            ) movies_dom;
+
+        ) Balsa_dom.window_size
     ) (E.once movie_list_ev) ;
 
     Lwt.return [
