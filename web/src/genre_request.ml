@@ -27,6 +27,9 @@ struct
     }
 
   let find = Db.Genre.find
+
+  let find_all () = Db.Genre.query ~full:true Bson.empty
+
 end
 
 module DB_r = Db_request.Make (M)

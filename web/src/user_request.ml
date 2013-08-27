@@ -29,6 +29,8 @@ struct
 
   let find = Db.User.find
 
+  let find_all () = Db.User.query ~full:true Bson.empty
+
 end
 
 module DB_r = Db_request.Make (M)

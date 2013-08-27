@@ -41,6 +41,8 @@ struct
 
   let find = Db.Movie.find
 
+  let find_all () = Db.Movie.query ~full:true Bson.empty
+
 end
 
 module DB_r = Db_request.Make (M)
