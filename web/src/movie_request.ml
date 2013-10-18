@@ -1,6 +1,6 @@
 {shared{
   type movie = {
-    uid: Movie_type.key ;
+    uid: Graph.Movie.key ;
     title: string ;
     overview : string option ;
     poster_path : string option ;
@@ -21,27 +21,27 @@
 
 module M =
 struct
-  type db_t = Movie_type.t
-  type uid = Movie_type.key
+  type db_t = Graph.Movie.t
+  type uid = Graph.Movie.key
   type client_t = movie
 
   let to_client m =
-    lwt genres = Genre_request.list_of_uid m.Movie_type.genres in
+    lwt genres = Genre_request.list_of_uid m.Graph.Movie.genres in
     Lwt.return ({
-        uid = m.Movie_type.uid ;
-        title = m.Movie_type.title ;
-        overview = m.Movie_type.overview ;
-        poster_path = m.Movie_type.poster_path ;
-        release_date = m.Movie_type.release_date ;
-        tagline = m.Movie_type.tagline ;
-        vote_average = m.Movie_type.vote_average ;
-        vote_count = m.Movie_type.vote_count ;
+        uid = m.Graph.Movie.uid ;
+        title = m.Graph.Movie.title ;
+        overview = m.Graph.Movie.overview ;
+        poster_path = m.Graph.Movie.poster_path ;
+        release_date = m.Graph.Movie.release_date ;
+        tagline = m.Graph.Movie.tagline ;
+        vote_average = m.Graph.Movie.vote_average ;
+        vote_count = m.Graph.Movie.vote_count ;
         genres;
       })
 
-  let find = Db.Movie.find
+  let find = Graph.Db.Movie.find
 
-  let find_all () = Db.Movie.query ~full:true Bson.empty
+  let find_all () = Graph.Db.Movie.query ~full:true Bson.empty
 
 end
 
@@ -60,11 +60,11 @@ let most_popular ?skip ?(limit=100) () =
   (* limit to vote_average that are higher than 3.5 *)
   let query = MongoMetaOp.min (Bson.add_element "vote_average" (Bson.create_double 3.5) Bson.empty) query in
 
-  lwt l = Db.Movie.query ?skip ~limit:100 ~full:true query in
+  lwt l = Graph.Db.Movie.query ?skip ~limit:100 ~full:true query in
   list_to_client l
 
 
-let rate : Movie_type.key -> User_type.key -> int -> unit Lwt.t =
+let rate : Graph.Movie.key -> Graph.User.key -> int -> unit Lwt.t =
   fun m_uid u_uid rating ->
   (*
      m_n = ((n - 1) * m_n-1 + rating) / n
@@ -93,14 +93,14 @@ let rate : Movie_type.key -> User_type.key -> int -> unit Lwt.t =
 
     let update_movie =
       lwt _ =
-        Db.Movie.find_and_update m_uid (
+        Graph.Db.Movie.find_and_update m_uid (
           fun m ->
-            let open Movie_type in
+            let open Graph.Movie in
 
             let vote_average,vote_count =
               match old_rating with
                 | Some old_rating ->
-                  let om = old_mean m.vote_average m.vote_count old_rating.Rating_type.rating in
+                  let om = old_mean m.vote_average m.vote_count old_rating.Graph.Rating.rating in
                   incremental_mean om (m.vote_count - 1) rating, m.vote_count
                 | None ->
                   incremental_mean m.vote_average m.vote_count rating, m.vote_count + 1
@@ -118,10 +118,10 @@ let rate : Movie_type.key -> User_type.key -> int -> unit Lwt.t =
 
     let rating =
       Balsa_option.case (
-        fun r -> { r with Rating_type.rating }
+        fun r -> { r with Graph.Rating.rating }
       ) (fun _ ->
           {
-            Rating_type.uid = Uid.fresh_uid Uid.Rating ;
+            Graph.Rating.uid = Graph.Uid.fresh_uid Graph.Uid.Rating ;
             movie_uid = m_uid ;
             user_uid = u_uid ;
             rating ;
@@ -131,18 +131,18 @@ let rate : Movie_type.key -> User_type.key -> int -> unit Lwt.t =
 
     let insert_rating =
       Balsa_option.case
-        (fun old_rating -> Db.Rating.update rating)
-        (fun _ -> Db.Rating.insert rating)
+        (fun old_rating -> Graph.Db.Rating.update rating)
+        (fun _ -> Graph.Db.Rating.insert rating)
         old_rating
     in
 
     let update_user =
       lwt _ =
-        Db.User.find_and_update u_uid (
+        Graph.Db.User.find_and_update u_uid (
           fun u ->
-            User_type.({
+            Graph.User.({
                 u with
-                  ratings = Balsa_list.cons_u rating.Rating_type.uid u.ratings;
+                  ratings = Balsa_list.cons_u rating.Graph.Rating.uid u.ratings;
               })
         )
       in
@@ -173,7 +173,7 @@ let search prefix =
   let query = Bson.add_element "$and" (Bson.create_list queries) Bson.empty in
 
   let query_ordered = MongoMetaOp.orderBy (Bson.add_element "vote_count" (Bson.create_int32 (-1l)) Bson.empty) query in
-  lwt ml = Db.Movie.query ~limit:(Balsa_config.get_int "autocomplete.movie.nb_return") query_ordered in
+  lwt ml = Graph.Db.Movie.query ~limit:(Balsa_config.get_int "autocomplete.movie.nb_return") query_ordered in
 
   list_to_client ml
 
@@ -186,10 +186,10 @@ let what_to_watch u_uid_opt =
       function
         | [] -> acc
         | g::t ->
-          let genre_uid = g.Genre_type.uid in
+          let genre_uid = g.Graph.Genre.uid in
 
           (* we select movie that have this genre, then sort it by vote_count and vote_average *)
-          let query = Bson.add_element "genres" (Bson.create_int64 (Int64.of_int (Uid.get_value genre_uid))) Bson.empty in
+          let query = Bson.add_element "genres" (Bson.create_int64 (Int64.of_int (Graph.Uid.get_value genre_uid))) Bson.empty in
           let orderby = Bson.add_element "vote_average" (Bson.create_int32 (-1l)) Bson.empty in
           let orderby = Bson.add_element "vote_count" (Bson.create_int32 (-1l)) orderby in
 
@@ -197,7 +197,7 @@ let what_to_watch u_uid_opt =
           let query_min_ordered = MongoMetaOp.min (Bson.add_element "vote_average" (Bson.create_double 3.5) Bson.empty) query_ordered in
 
           let movie_query =
-            lwt movie = Db.Movie.query ~limit:(Balsa_config.get_int "nb_movie_by_genre") query_min_ordered in
+            lwt movie = Graph.Db.Movie.query ~limit:(Balsa_config.get_int "nb_movie_by_genre") query_min_ordered in
             Lwt.return (g, movie)
           in
           build_paralel_query (movie_query::acc) t
@@ -218,7 +218,7 @@ let what_to_watch u_uid_opt =
         read_queries acc thread_list
     in
 
-    lwt genres = Db.Genre.query Bson.empty in
+    lwt genres = Graph.Db.Genre.query Bson.empty in
     let queries = build_paralel_query [] genres in
 
     lwt l = read_queries [] queries in
@@ -234,8 +234,8 @@ let what_to_watch u_uid_opt =
 
   match u_uid_opt with
     | Some u_uid ->
-      lwt u = Db.User.find u_uid in
-      let rating_nb = List.length u.User_type.ratings in
+      lwt u = Graph.Db.User.find u_uid in
+      let rating_nb = List.length u.Graph.User.ratings in
       if rating_nb < Balsa_config.get_int "minimum_rating_for_suggestion" then
         (* load movie by genres since user didn't rate enough movie *)
         movie_genre ()

@@ -1,0 +1,13 @@
+EXT json_ext.server.syntax
+EXT bson.syntax
+EXT deriving.syntax
+EXT js_of_ocaml.deriving.syntax
+EXT deriving-ocsigen.syntax
+PKG mongo
+PKG bson
+PKG lwt
+PKG balsa.server
+PKG balsa.client
+PKG eliom.server
+PKG eliom.client
+PKG deriving-ocsigen

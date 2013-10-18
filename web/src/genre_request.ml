@@ -1,6 +1,6 @@
 {shared{
   type genre = {
-    uid: Genre_type.key ;
+    uid: Graph.Genre.key ;
     name: string ;
   }
 }}
@@ -16,19 +16,19 @@
 
 module M =
 struct
-  type db_t = Genre_type.t
-  type uid = Genre_type.key
+  type db_t = Graph.Genre.t
+  type uid = Graph.Genre.key
   type client_t = genre
 
   let to_client g =
     Lwt.return {
-      uid = g.Genre_type.uid ;
-      name = g.Genre_type.name ;
+      uid = g.Graph.Genre.uid ;
+      name = g.Graph.Genre.name ;
     }
 
-  let find = Db.Genre.find
+  let find = Graph.Db.Genre.find
 
-  let find_all () = Db.Genre.query ~full:true Bson.empty
+  let find_all () = Graph.Db.Genre.query ~full:true Bson.empty
 
 end
 

@@ -146,79 +146,15 @@ let _ =
     (camlp4 "%.ml" None)
 
 
-(**** JS COMPILATION ****)
-let _ =
-  rule "js_of_ocaml"
-    ~deps:["%_client.cmo";"public/js_dummy.js"]
-    ~prod:"%.js"
-    (fun env _ ->
-      let tags=tags_of_pathname (env "%.js") ++"ocaml"++"compile"++"js" in
-	    Cmd (S [Sh"js_of_eliom"; T tags; P (env"%_client.cmo"); A"-jsopt";P"public/js_dummy.js"; A"-o"; P(env"%.js")])
-    )
-
-(* client/server compilation*)
-
-let type_mli_cmd filename =
-  [ A"-ppopt"; A"-type"; A"-ppopt"; P ("src/type_mli/"^filename-.-"type_mli") ]
-
-let compilation ml env build =
-  let ml = env ml in
-  let filename = try Filename.basename (Filename.chop_extension ml) with _ -> ml in
-  let tags = (tags_of_pathname ml)++"ocaml"++"byte" in
-
-  ignore (build [[ "src/type_mli/"^filename-.-"type_mli" ]]);
-  ignore (build [[ml-.-"depends"]]);
-
-  let cmo = Pathname.update_extensions "cmo" ml in
-  Ocamlbuild_pack.Ocaml_compiler.prepare_compile build ml;
-
-  Cmd (S ([!Options.ocamlc; A"-c"; T(tags++"compile");
-           Ocamlbuild_pack.Ocaml_utils.ocaml_ppflags tags;
-	         Ocamlbuild_pack.Ocaml_utils.ocaml_include_flags ml]
-	        @ (type_mli_cmd filename)
-	        @ [A"-o"; Px cmo; P ml]))
-
-let _ =
-  rule "ocaml server modified: ml -> cmo & cmi"
-    ~deps:["src/%(suffix)/%.ml"]
-    ~prods:["src/%(suffix:<*> and not <*_*>)/%.cmo"; "src/%(suffix:<*> and not <*_*>)/%.cmi"]
-    (fun env build -> compilation ("src/"^ (env "%(suffix)") ^ "/%.ml") env build)
-
-(* Deps *)
-let ocaml_depend ml env build =
-  let ml = env ml in
-  let filename = try Filename.basename (Filename.chop_extension ml) with _ -> ml in
-  let tags = (tags_of_pathname ml) in
-
-   ignore (build [[ "src/type_mli/"^filename-.-"type_mli" ]]);
-
-  let ml_depends = Pathname.update_extensions "ml.depends" ml in
-
-  Cmd(S([S [!Options.ocamldep; T (tags++"ocaml"++"ocamldep"); Ocamlbuild_pack.Ocaml_utils.ocaml_ppflags (tags++"pp:dep"); A "-modules"]; P ml]
-	      @ (type_mli_cmd filename)
-	      @ [Sh ">"; Px ml_depends]))
-
-let _ =
-  rule "ocaml server modified:  ml -. depends"
-    ~dep:"src/%(suffix)/%.ml"
-    ~prod:"src/%(suffix:<*> and not <*_*>)/%.ml.depends"
-    (fun env build -> ocaml_depend ("src/"^ (env "%(suffix)") ^"/%.ml") env build)
-
 let _ = Options.use_ocamlfind := true
 let _ = Options.make_links := false
 
 let _ =
   dispatch begin function
-    | Before_rules ->
-      copy_rule "mlpack to mllib" "w2wt_server.mlpack" "w2wt_server.mllib"
     | After_rules ->
-
       copy_rule_with_header "src/%(name).ml" "src/server/%(name:<*>).ml" ;
       copy_rule_with_header "src/%(name).ml" "src/client/%(name:<*>).ml" ;
-      copy_rule_with_header "src/%(name).ml" "src/type_mli/%(name:<*>).ml" ;
 
-      flag [ "ocaml"; "infer_interface"; "thread" ] (S [ A "-thread" ]);
-      flag [ "js_compile"] (S [S [ A "-package" ; A "json_ext.client"]; S [ A "-package" ; A "bson.client"]; S [ A "-package" ; A "balsa.client"] ]; );
       ()
 
     | _ -> ()

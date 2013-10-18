@@ -3,7 +3,7 @@
   open Balsa_react
 
   type service =
-    | Movie of Movie_type.key
+    | Movie of Graph.Movie.key
     | Profile
     | What_to_watch
     | Taste_profile
@@ -19,7 +19,7 @@
     let no_arg f _ = f () in
     let arg_opt_uid f r = match Regexp.matched_group r 1 with
       | None -> main_service
-      | Some x -> f (Uid.unsafe (int_of_string x))
+      | Some x -> f (Graph.Uid.unsafe (int_of_string x))
     in
 
     let rec iter = function
@@ -41,7 +41,7 @@
     ]
 
   let string_of_service = function
-    | Movie uid -> Printf.sprintf "movie/%d" (Uid.get_value uid)
+    | Movie uid -> Printf.sprintf "movie/%d" (Graph.Uid.get_value uid)
     (* | Profile uid -> Printf.sprintf "profile/%d" (Uid.get_value uid) *)
     | Profile -> "profile"
     | What_to_watch -> "what_to_watch"

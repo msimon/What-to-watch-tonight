@@ -22,7 +22,7 @@
         match_lwt get_session () with
           | Some u ->
             (* Search in db and compare db value with session value *)
-            lwt db_u = Db.User.find u.User_request.uid in
+            lwt db_u = Graph.Db.User.find u.User_request.uid in
             lwt db_u = User_request.to_client db_u in
             if u <> db_u then begin
               lwt _ = set_session (Some db_u) in

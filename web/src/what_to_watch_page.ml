@@ -86,7 +86,6 @@
 
         Balsa_dom.toggle_mouse_over movie_prev (
           fun _ ->
-            Balsa_log.debug "hello ?";
             slide `Left
         ) (fun _ ->
             Lwt.cancel !slide_thread
@@ -94,7 +93,6 @@
 
         Balsa_dom.toggle_mouse_over movie_next (
           fun _ ->
-            Balsa_log.debug "Right ?";
             slide `Right
         ) (fun _ ->
             Lwt.cancel !slide_thread

@@ -45,34 +45,48 @@
     (* we are listening on update_movie_list to be sure the movie list is load *)
     E.iter (
       fun _ ->
-        S.iter (
-          fun _ ->
-            let w = Manip.Attr.offsetWidth movies_dom in
-            let nb_display = w / (Lazy.force single_movie_width) in
+        let window_size = S.map (
+            fun _ ->
+              let w = Manip.Attr.offsetWidth movies_dom in
+              let nb_display = w / (Lazy.force single_movie_width) in
 
-            let movies_width = nb_display * Lazy.force single_movie_width in
-            let movies_width_p1 = (nb_display + 1) * Lazy.force single_movie_width in
-            let movies_width_m1 = (nb_display - 1) * Lazy.force single_movie_width in
+              let movies_width = nb_display * Lazy.force single_movie_width in
+              let movies_width_p1 = (nb_display + 1) * Lazy.force single_movie_width in
+              let movies_width_m1 = (nb_display - 1) * Lazy.force single_movie_width in
 
-            let page_width = Balsa_dom.get_browser_page_width () in
-            if movies_width > page_width && nb_display > Lazy.force min_movie_per_page then
-              update_width_stl (Printf.sprintf "width:%dpx" movies_width_m1)
-            else if movies_width < page_width && movies_width_p1 < page_width then
-              update_width_stl (Printf.sprintf "width:%dpx" movies_width_p1)
-            else
-              update_width_stl (Printf.sprintf "width:%dpx" movies_width);
+              let page_width = Balsa_dom.get_browser_page_width () in
+              if movies_width > page_width && nb_display > Lazy.force min_movie_per_page then
+                update_width_stl (Printf.sprintf "width:%dpx" movies_width_m1)
+              else if movies_width < page_width && movies_width_p1 < page_width then
+                update_width_stl (Printf.sprintf "width:%dpx" movies_width_p1)
+              else
+                update_width_stl (Printf.sprintf "width:%dpx" movies_width);
 
-            let i = ref 0 in
-            Balsa_dom.iter_on_children (
-              fun el ->
-                let el = Html5.Of_dom.of_element el in
-                if (nb_display - (!i mod nb_display) - 1) < 2 then Html5.Manip.Class.add el "last"
-                else Html5.Manip.Class.remove el "last";
-                incr(i);
-            ) movies_dom;
+              let i = ref 0 in
+              Balsa_dom.iter_on_children (
+                fun el ->
+                  let el = Html5.Of_dom.of_element el in
+                  if (nb_display - (!i mod nb_display) - 1) < 2 then Html5.Manip.Class.add el "last"
+                  else Html5.Manip.Class.remove el "last";
+                  incr(i);
+              ) movies_dom;
+          ) Balsa_dom.window_size
+        in
 
-        ) Balsa_dom.window_size
+        let rec service_change =
+          lazy (S.map (
+              fun s ->
+                if s <> Path.Popular_movies then begin
+                  S.stop (Lazy.force service_change);
+                  S.stop window_size
+                end
+            ) Path.service)
+        in
+        let _ = Lazy.force service_change in
+        ()
+
     ) (E.once movie_list_ev) ;
+
 
     Lwt.return [
       div ~a:[ a_class ["movie_list"]] [

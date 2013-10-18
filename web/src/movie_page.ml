@@ -1,13 +1,13 @@
 {server{
 
   let fetch_movie =
-    server_function Json.t<Movie_type.key> (
+    server_function Json.t<Graph.Movie.key> (
       fun m_uid ->
         Movie_request.of_uid m_uid
     )
 
   let rate =
-    server_function Json.t<Movie_type.key * int> (
+    server_function Json.t<Graph.Movie.key * int> (
       fun (m_uid,rating) ->
         match_lwt Connection.get_uid () with
           | Some u_uid ->
@@ -17,7 +17,7 @@
     )
 
   let user_rating =
-    server_function Json.t<Movie_type.key> (
+    server_function Json.t<Graph.Movie.key> (
       fun m_uid ->
         match_lwt Connection.get_uid () with
           | Some u_uid ->
