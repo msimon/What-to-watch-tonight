@@ -1,1 +1,3 @@
-<api/*> or <w2wt/*> or <learning_dir/*>: thread, syntax(camlp4o), package(deriving-ocsigen,deriving-ocsigen.syntax,ocsigenserver,lwt,lwt.syntax,yojson,json_ext.server,json_ext.server.syntax,bson,bson.syntax,mongo,mongo.lwt,pcre)
+<api/*> or <w2wt/*> or <learning_dir/*>: thread, syntax(camlp4o), package(ocsigenserver,eliom,eliom.server,eliom.syntax.server,deriving-ocsigen,deriving-ocsigen.syntax,lwt,lwt.syntax,yojson,json_ext.server,json_ext.server.syntax,bson,bson.syntax,mongo,mongo.lwt,pcre,balsa.server,ocsigenserver,ocsigenserver.baselib,ocsigenserver.ext.ocsipersist-sqlite),use_api,use_graph_server
+<config/*>: syntax(camlp4o), package(deriving-ocsigen,deriving-ocsigen.syntax,yojson,json_ext.server,json_ext.server.syntax)
+<config>: include

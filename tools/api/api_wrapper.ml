@@ -15,16 +15,16 @@ let load_movies config mongodb action =
         let max_id =
           try
             let e = List.nth (MongoReply.get_document_list r) 0 in
-            let m = Db.Movie_api.Bson_utils_movie.from_bson e in
-            m.Db.Movie_api.id
+            let m = Api.Movie.Bson_utils_t.from_bson e in
+            m.Api.Movie.id
           with _ -> 0
         in
-        Printf.printf "Complete from %d to %d\n%!" max_id latest_movie_api.Db.Movie_api.id ;
+        Printf.printf "Complete from %d to %d\n%!" max_id latest_movie_api.Api.Movie.id ;
 
-        Lwt.return (max_id,latest_movie_api.Db.Movie_api.id)
+        Lwt.return (max_id,latest_movie_api.Api.Movie.id)
       | `Reload ->
         lwt _ = Mongo.drop_collection mongodb in
-        Lwt.return (0,latest_movie_api.Db.Movie_api.id)
+        Lwt.return (0,latest_movie_api.Api.Movie.id)
       | `Retry ->
         let query = Bson.empty in
         let query = MongoMetaOp.orderBy (Bson.add_element "id" (Bson.create_int32 (-1l)) Bson.empty) query in
@@ -32,8 +32,8 @@ let load_movies config mongodb action =
         let max_id =
           try
             let e = List.nth (MongoReply.get_document_list r) 0 in
-            let m = Db.Movie_api.Bson_utils_movie.from_bson e in
-            m.Db.Movie_api.id
+            let m = Api.Movie.Bson_utils_t.from_bson e in
+            m.Api.Movie.id
           with _ -> 0
         in
 
@@ -109,9 +109,9 @@ let load_genres config mongodb =
   List.iter (
     fun g ->
       try
-        Lwt.async (fun _ -> Mongo.insert mongodb [ (Db.Genre_api.Bson_utils_genre.to_bson g) ]);
+        Lwt.async (fun _ -> Mongo.insert mongodb [ (Api.Genre.Bson_utils_t.to_bson g) ]);
       with exn ->
-        Printf.printf "err insert genres: %s || on %s\n%!" (Printexc.to_string exn) (Json_ext.to_string (Db.Genre_api.Json_ext_genre.to_json g))
+        Printf.printf "err insert genres: %s || on %s\n%!" (Printexc.to_string exn) (Json_ext.to_string (Api.Genre.Json_ext_t.to_json g))
   ) genres;
 
   Lwt.return_unit
@@ -119,7 +119,7 @@ let load_genres config mongodb =
 
 let run action =
   let config = Config.init () in
-  lwt mongodb = Mongo.create config.database.ip config.database.port config.database.name config.database.collection in
+  lwt mongodb = Mongo.create config.api_db.ip config.api_db.port config.api_db.name config.api_db.collection in
 
   lwt _ =
     Mongo.ensure_simple_index ~options:[ Mongo.Unique true; Mongo.DropDups true ] mongodb "id"

@@ -270,7 +270,7 @@ let cost_function cost_fun_vect config =
 
   (* Printf.printf "movie_req : %f, user_req : %f\n%!" movie_req user_req ; *)
 
-  let j = j /. 2. +. (config.Config.lambda /. 2.) *. movie_req +. (config.Config.lambda /. 2.) *. user_req in
+  let j = j /. 2. +. (config.Config.learning.Config.lambda /. 2.) *. movie_req +. (config.Config.learning.Config.lambda /. 2.) *. user_req in
   Printf.printf "Final j : %f\n\n%!" j;
   j
 
@@ -310,7 +310,7 @@ let gradient_descent config =
         let v = List.mapi (
             fun k m_vect ->
               let value = m_vect.Param.value
-                          -. (config.Config.alpha *. ((movie_cost movie k) +. (config.Config.lambda *. m_vect.Param.value)))
+                          -. (config.Config.learning.Config.alpha *. ((movie_cost movie k) +. (config.Config.learning.Config.lambda *. m_vect.Param.value)))
               in
               {
                 m_vect with
@@ -346,7 +346,7 @@ let gradient_descent config =
         let v = List.mapi (
             fun k u_vect ->
               let value = u_vect.Param.value
-                          -. (config.Config.alpha *. ((user_cost user k) +. (config.Config.lambda *. u_vect.Param.value)))
+                          -. (config.Config.learning.Config.alpha *. ((user_cost user k) +. (config.Config.learning.Config.lambda *. u_vect.Param.value)))
               in
               {
                 u_vect with
@@ -397,15 +397,15 @@ let gradient_descent config =
         (* if c = prev_c we may have reach a minima,
            we probably do not want to raise alpha *)
         if c < prev_c then
-          Config.(config.alpha <- config.alpha +. config.alpha *. 0.05) ;
+          Config.(config.learning.alpha <- config.learning.alpha +. config.learning.alpha *. 0.05) ;
 
-        Printf.printf "i: %d, alpha raised: %f\n\n%!" n config.Config.alpha ;
+        Printf.printf "i: %d, alpha raised: %f\n\n%!" n config.Config.learning.Config.alpha ;
 
         iter c (n - 1)
       end else begin
-        Config.(config.alpha <- config.alpha /. 2.);
-        Printf.printf "alpha lowered: %f\n\n%!" config.Config.alpha ;
-        if config.Config.alpha > 0.000005 then
+        Config.(config.learning.alpha <- config.learning.alpha /. 2.);
+        Printf.printf "alpha lowered: %f\n\n%!" config.Config.learning.Config.alpha ;
+        if config.Config.learning.Config.alpha > 0.000005 then
           iter prev_c n;
       end
     end
@@ -426,7 +426,7 @@ let gradient_descent config =
 
 
 let main config =
-  let database_config = config.Config.w2wt in
+  let database_config = config.Config.w2wt_db in
   lwt _ = load_genre_params database_config in
   lwt _ = load_movie_params database_config in
 

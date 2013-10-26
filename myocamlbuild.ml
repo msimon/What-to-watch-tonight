@@ -194,7 +194,8 @@ let compilation ml env build =
 let _ =
   rule "ocaml server modified: ml -> cmo & cmi"
     ~deps:["%(path)/%(suffix)/%(file).ml"]
-    ~prods:["%(path)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).cmo"; "%(path)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).cmi"]
+    ~prods:["%(path:<web/*>)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).cmo";
+            "%(path:<web/*>)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).cmi"]
     (fun env build -> compilation ((env "%(path)/")^ (env "%(suffix)") ^ "/%(file).ml") env build)
 
 (* Deps *)
@@ -202,12 +203,6 @@ let ocaml_depend ml env build =
   let ml = env ml in
   let filename = try Filename.basename (Filename.chop_extension ml) with _ -> ml in
   let tags = (tags_of_pathname ml) in
-
-  (* Printf.printf "path: %s\n" (env "%(path)"); *)
-  (* Printf.printf "suffix: %s\n" (env "%(suffix)"); *)
-
-  (* Printf.printf "%s\n" ((env "%(path)") ^ "/type_mli/"^filename-.-"type_mli"); *)
-  (* Printf.printf "ml: %s\n" (env "%(file)"); *)
 
   ignore (build [[ (env "%(path)/type_mli/"^filename-.-"type_mli") ]]);
 
@@ -220,7 +215,7 @@ let ocaml_depend ml env build =
 let _ =
   rule "ocaml server modified:  ml -. depends"
     ~dep:"%(path)/%(suffix)/%(file).ml"
-    ~prod:"%(path)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).ml.depends"
+    ~prod:"%(path:<web/*>)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).ml.depends"
     (fun env build -> ocaml_depend ((env "%(path)/%(suffix)") ^"/%(file).ml") env build)
 
 let _ = Options.use_ocamlfind := true
@@ -235,8 +230,9 @@ let _ =
       copy_rule_with_header "*.ml -> **/client/*.ml" "%(path)/%(name).ml" "%(path)/client/%(name:<*>).ml" ;
       copy_rule_with_header "*.ml -> **/type_mli/*.ml" "%(path)/%(name).ml" "%(path)/type_mli/%(name:<*>).ml" ;
 
-      ocaml_lib ~extern:true  ~dir:"../graph/_build" "../graph/_build/graph_server" ;
-      ocaml_lib ~extern:true ~dir:"../graph/_build" "../graph/_build/graph_client" ;
+      ocaml_lib ~extern:true  ~dir:"./graph" "./graph/graph_server" ;
+      ocaml_lib ~extern:true ~dir:"./graph" "./graph/graph_client" ;
+      ocaml_lib ~extern:true ~dir:"./api" "./api/api" ;
 
       flag [ "ocaml"; "infer_interface"; "thread" ] (S [ A "-thread" ]);
       (* flag [ "js_compile"] (S [S [ A "-package" ; A "json_ext.client"]; S [ A "-package" ; A "bson.client"]; S [ A "-package" ; A "balsa.client"] ]; ); *)

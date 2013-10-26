@@ -25,8 +25,6 @@ let main _ _ =
   let configuration = Balsa_config.client_config () in
   lwt s = Connection.get_session () in
 
-  Graph_server.Rating.indexes ();
-
   let _ : unit client_value = {{
   Eliom_client.onload (
     fun _ ->

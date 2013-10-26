@@ -20,6 +20,7 @@
     title_search: string list ; (* title_search is only present here for the database, not for direct use *)
     genres : Uid.genre Uid.uid list ;
     vector : param list ;
+    imdb_uid: int ;
   } deriving (Bson_ext)
 }}
 
@@ -36,11 +37,12 @@ let key t = t.uid
 
 let indexes () =
   let uid = (["uid"],[ Mongo_lwt.Unique true ]) in
+  let imdb_uid = (["imdb_uid"], [Mongo_lwt.Unique true; Mongo_lwt.DropDups true]) in
   let vote_average = (["vote_average"],[]) in
   let vote_count = (["vote_count"],[]) in
   let title_index = (["title_search"], []) in
 
-  [ uid; vote_average; vote_count; title_index ]
+  [ uid; imdb_uid; vote_average; vote_count; title_index ]
 
 let bson_uid (key : key) =
   Bson.create_int64 (Int64.of_int (Uid.get_value key))

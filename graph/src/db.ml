@@ -14,6 +14,10 @@ sig
   val search: key -> Bson.t
   val key: t -> key
 
+  (* string list: for multi-index only. When we want ONE index on several fields *)
+  (* i.e: ([ "user_uid"; "movie_uid" ], [ Mongo_lwt.Unique true ]) mean that the couple
+     user_uid and movie_uid must be unique, but not user_uid or movie_uid as themself.
+  *)
   val indexes: unit -> (string list * (Mongo_lwt.index_option list)) list
 
 end
