@@ -1,5 +1,29 @@
 {
   api_url: "http://api.themoviedb.org/3",
   mock_api: "http://private-c481f-themoviedb.apiary.io",
-  api_key: "1ec8845204d6v8888ffffee12a636ca56"
+  api_key: "1ec8845204d6v8888ffffee12a636ca56",
+  max_connections: 5,
+  request_per_second: 2,
+  minimal_vote_count: 5,
+
+  api_db: {
+    ip: "127.0.0.1",
+    port: 27017,
+    name: "themoviedb",
+    collection: "movies"
+  },
+  w2wt_db: {
+    ip: "127.0.0.1",
+    port: 27017,
+    name: "w2wt",
+    collection: "movies"
+  },
+
+  movie_loop_time: 100,
+  sleep_time: 1.3,
+
+  learning: {
+    alpha : 0.05,
+    lambda : 1.5
+  }
 }

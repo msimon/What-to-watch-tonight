@@ -21,6 +21,7 @@ type local_configuration = {
   movie_loop_time: float;
   sleep_time: float ;
   learning: learning;
+  minimal_vote_count: int;
 } deriving (Json_ext)
 
 let init () =
