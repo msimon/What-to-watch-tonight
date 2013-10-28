@@ -45,7 +45,7 @@ let load_movies config mongodb action =
 
   let thread_pool = Lwt_pool.create config.max_connections (fun _ -> Lwt.return_unit) in
 
-  let uid = ref 1 in
+  let uid = ref from_id in
   let next_uid () =
     incr(uid);
     !uid
