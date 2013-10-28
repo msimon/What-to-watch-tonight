@@ -6,9 +6,9 @@
 <web/w2wt_client.byte>: use_graph_client,package(balsa.client,bson.client,json_ext.client)
 
 
-<graph/src/server/*.{ml,mli}>: thread, syntax(camlp4o), package(ocsigenserver,eliom.server,eliom.syntax.server,lwt.syntax,deriving-ocsigen,deriving-ocsigen.syntax,yojson,bson,bson.syntax,mongo,balsa.server)
-<graph/src/client/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.client,eliom.syntax.client,lwt.syntax,balsa.client,bson.client.syntax)
-<graph/src/server/*.cmx>: for-pack(Graph_server)
+<type/graph/src/server/*.{ml,mli}>: thread, syntax(camlp4o), package(ocsigenserver,eliom.server,eliom.syntax.server,lwt.syntax,deriving-ocsigen,deriving-ocsigen.syntax,yojson,bson,bson.syntax,mongo,balsa.server)
+<type/graph/src/client/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.client,eliom.syntax.client,lwt.syntax,balsa.client,bson.client.syntax)
+<type/graph/src/server/*.cmx>: for-pack(Graph_server)
 
-<api/src/*.{ml,mli}>: thread, syntax(camlp4o), package(deriving-ocsigen,deriving-ocsigen.syntax,yojson,bson,bson.syntax,json_ext.server,json_ext.server.syntax)
-<api/src/*.cmx> : for-pack(Api)
+<type/api/src/*.{ml,mli}>: thread, syntax(camlp4o), package(deriving-ocsigen,deriving-ocsigen.syntax,yojson,bson,bson.syntax,json_ext.server,json_ext.server.syntax)
+<type/api/src/*.cmx> : for-pack(Api)
