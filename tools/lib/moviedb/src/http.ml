@@ -3,6 +3,8 @@ open Ocsigen_http_frame
 open Ocsigen_stream
 open Ocsigen_lib
 
+open Config_t
+
 exception Incorrect_response
 exception Replay_request
 
@@ -93,7 +95,6 @@ let post_string_url ?headers ?content_type ~content url () =
 
 
 let build_url =
-  let open Config in
   let call_nb = ref 1 in
   let first_time = ref None in
   let retry_after = ref 0 in
@@ -111,7 +112,7 @@ let build_url =
           let t_ = Unix.gettimeofday () in
 
           let n = call_nb / config.request_per_second in
-          let waiting_time = (float_of_int n) *. config.Config.sleep_time +. (float_of_int !retry_after) in
+          let waiting_time = (float_of_int n) *. config.sleep_time +. (float_of_int !retry_after) in
 
           if (t_ -. t < waiting_time) then begin
             Lwt_unix.sleep (waiting_time -. (t_ -. t))
@@ -135,7 +136,8 @@ let build_url =
     lwt s =
       Ocsigen_http_frame.Http_header.(
         match h.mode with
-          | Answer i when i = 200 || i = 304 -> Lwt.return s
+          | Answer i when i = 200 || i = 304 ->
+            Lwt.return s
           | Answer i when i = 429 ->
             let n = get_headers_value h (Http_headers.name "Retry-After") in
             Printf.printf "retry-after : %s\n%!" n;

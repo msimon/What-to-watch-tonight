@@ -1,9 +1,9 @@
-open Config
+open Config_t
 
 module Mongo = Mongo_lwt
 
 let load_movies config mongodb action =
-  lwt latest_movie_api = Db.fetch_last_movie config in
+  lwt latest_movie_api = Db_api.fetch_last_movie config in
 
   lwt from_id,to_uid =
     match action with
@@ -55,8 +55,8 @@ let load_movies config mongodb action =
     let uid = next_uid () in
     let call () =
       Printf.printf "query : %d\n%!" uid;
-      lwt m = Db.fetch_movie_str config uid in
-      Db.add_movie_to_pool m;
+      lwt m = Db_api.fetch_movie_str config uid in
+      Db_api.add_movie_to_pool m;
       Lwt.return_unit
     in
 
@@ -95,14 +95,14 @@ let load_movies config mongodb action =
 
   (* then we join the insertion, and thread together so insert doesn't end before connection threads*)
   Lwt.join [
-    Db.insert_movie_async mongodb config.movie_loop_time threads;
+    Db_api.insert_movie_async mongodb config.movie_loop_time threads;
     threads;
   ]
 
 let load_genres config mongodb =
   let mongodb = Mongo.change_collection mongodb "genres" in
   lwt _ = Mongo.drop_collection mongodb in
-  lwt genres = Db.fetch_genres config in
+  lwt genres = Db_api.fetch_genres config in
 
   Printf.printf "inserting %d genres\n%!" (List.length genres);
 
@@ -116,16 +116,14 @@ let load_genres config mongodb =
 
   Lwt.return_unit
 
-
-let run action =
-  let config = Config.init () in
+let run config action =
   lwt mongodb = Mongo.create config.api_db.ip config.api_db.port config.api_db.name config.api_db.collection in
 
   lwt _ =
     Mongo.ensure_simple_index ~options:[ Mongo.Unique true; Mongo.DropDups true ] mongodb "id"
   in
 
-  lwt md_conf = Db.fetch_moviedb_configuration config in
+  lwt md_conf = Db_api.fetch_moviedb_configuration config in
   lwt _ =
     match action with
       | `Genres_only ->
@@ -137,27 +135,3 @@ let run action =
 
   lwt _ = Mongo.destory mongodb in
   Lwt.return ()
-
-let read_params () =
-  if Array.length (Sys.argv) = 1 then begin
-    Printf.printf "%s argument required" Sys.argv.(0);
-    Printf.printf "Usage:\n-rd : drop and reload all movies. Takes approx 2 days\n-c or -complete: load new movies into db\n-rf or -retry: try to reaload all missing id\n-g or -genres: relaod only the genres list%!";
-    exit 0
-  end else if Array.length (Sys.argv) > 2 then begin
-    Printf.printf "%s argument required" Sys.argv.(0);
-    Printf.printf "Only one argument at a time!";
-    exit 0
-  end else begin
-    match Sys.argv.(1) with
-      | "-rd" -> `Reload
-      | "-c" | "-complete" -> `Complete
-      | "-retry" | "-r" -> `Retry
-      | "-genres" | "-g" -> `Genres_only
-      | s ->
-        Printf.printf "Unknow parameter %s\n%!" s;
-        exit 0
-  end
-
-let _ =
-  let action = read_params () in
-  Lwt_main.run (run action)

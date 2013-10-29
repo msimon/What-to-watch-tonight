@@ -3,9 +3,9 @@
   "balsa_analytics.enable-analytics": false,
   "balsa_http.max-stream-string-size": 100000,
 
-  "db.ip": "127.0.0.1",
-  "db.port": 27017,
-  "db.name": "w2wt",
+  "w2wt_db.ip": "127.0.0.1",
+  "w2wt_db.port": 27017,
+  "w2wt_db.name": "w2wt",
 
   "cache.cache_lifetime": 86400.0,
   "db.query_cache_lifetime": 600,

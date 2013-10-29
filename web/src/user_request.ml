@@ -27,9 +27,9 @@ struct
         facebook = u.Graph.User.facebook ;
       })
 
-  let find = Graph.Db.User.find
+  let find = Db.User.find
 
-  let find_all () = Graph.Db.User.query ~full:true Bson.empty
+  let find_all () = Db.User.query ~full:true Bson.empty
 
 end
 
@@ -42,13 +42,13 @@ let facebook_sign_in (fb_id, access_token) =
 
   (* search for facebook_id *)
   let q = Bson.add_element "facebook.facebook_uid" (Bson.create_string fb_id) Bson.empty in
-  lwt u = Graph.Db.User.query_one q in
+  lwt u = Db.User.query_one q in
 
   match u with
     | Some u ->
       (* update the access token if the user already exist*)
 
-      lwt u = Graph.Db.User.find_and_update u.Graph.User.uid (
+      lwt u = Db.User.find_and_update u.Graph.User.uid (
           fun u ->
             {
               u with
@@ -77,7 +77,7 @@ let facebook_sign_in (fb_id, access_token) =
         vector = [];
       } in
 
-      lwt _ = Graph.Db.User.insert u in
+      lwt _ = Db.User.insert u in
 
       to_client u
 

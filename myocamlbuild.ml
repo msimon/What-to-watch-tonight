@@ -230,9 +230,13 @@ let _ =
       copy_rule_with_header "*.ml -> **/client/*.ml" "%(path)/%(name).ml" "%(path)/client/%(name:<*>).ml" ;
       copy_rule_with_header "*.ml -> **/type_mli/*.ml" "%(path)/%(name).ml" "%(path)/type_mli/%(name:<*>).ml" ;
 
-      ocaml_lib ~extern:true  ~dir:"./type/graph" "./type/graph/graph_server" ;
+      ocaml_lib ~extern:true ~dir:"./type/graph" "./type/graph/graph_server" ;
       ocaml_lib ~extern:true ~dir:"./type/graph" "./type/graph/graph_client" ;
       ocaml_lib ~extern:true ~dir:"./type/api" "./type/api/api" ;
+
+      ocaml_lib ~extern:true ~dir:"./tools/lib/moviedb" "./tools/lib/moviedb/moviedb" ;
+      ocaml_lib ~extern:true ~dir:"./tools/lib/convert" "./tools/lib/convert/convert" ;
+      ocaml_lib ~extern:true ~dir:"./tools/lib/learning" "./tools/lib/learning/learning" ;
 
       flag [ "ocaml"; "infer_interface"; "thread" ] (S [ A "-thread" ]);
       (* flag [ "js_compile"] (S [S [ A "-package" ; A "json_ext.client"]; S [ A "-package" ; A "bson.client"]; S [ A "-package" ; A "balsa.client"] ]; ); *)

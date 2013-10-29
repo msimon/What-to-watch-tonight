@@ -39,9 +39,9 @@ struct
         genres;
       })
 
-  let find = Graph.Db.Movie.find
+  let find = Db.Movie.find
 
-  let find_all () = Graph.Db.Movie.query ~full:true Bson.empty
+  let find_all () = Db.Movie.query ~full:true Bson.empty
 
 end
 
@@ -60,7 +60,7 @@ let most_popular ?skip ?(limit=100) () =
   (* limit to vote_average that are higher than 3.5 *)
   let query = MongoMetaOp.min (Bson.add_element "vote_average" (Bson.create_double 3.5) Bson.empty) query in
 
-  lwt l = Graph.Db.Movie.query ?skip ~limit:100 ~full:true query in
+  lwt l = Db.Movie.query ?skip ~limit:100 ~full:true query in
   list_to_client l
 
 
@@ -93,7 +93,7 @@ let rate : Graph.Movie.key -> Graph.User.key -> int -> unit Lwt.t =
 
     let update_movie =
       lwt _ =
-        Graph.Db.Movie.find_and_update m_uid (
+        Db.Movie.find_and_update m_uid (
           fun m ->
             let open Graph.Movie in
 
@@ -131,14 +131,14 @@ let rate : Graph.Movie.key -> Graph.User.key -> int -> unit Lwt.t =
 
     let insert_rating =
       Balsa_option.case
-        (fun old_rating -> Graph.Db.Rating.update rating)
-        (fun _ -> Graph.Db.Rating.insert rating)
+        (fun old_rating -> Db.Rating.update rating)
+        (fun _ -> Db.Rating.insert rating)
         old_rating
     in
 
     let update_user =
       lwt _ =
-        Graph.Db.User.find_and_update u_uid (
+        Db.User.find_and_update u_uid (
           fun u ->
             Graph.User.({
                 u with
@@ -173,7 +173,7 @@ let search prefix =
   let query = Bson.add_element "$and" (Bson.create_list queries) Bson.empty in
 
   let query_ordered = MongoMetaOp.orderBy (Bson.add_element "vote_count" (Bson.create_int32 (-1l)) Bson.empty) query in
-  lwt ml = Graph.Db.Movie.query ~limit:(Balsa_config.get_int "autocomplete.movie.nb_return") query_ordered in
+  lwt ml = Db.Movie.query ~limit:(Balsa_config.get_int "autocomplete.movie.nb_return") query_ordered in
 
   list_to_client ml
 
@@ -197,7 +197,7 @@ let what_to_watch u_uid_opt =
           let query_min_ordered = MongoMetaOp.min (Bson.add_element "vote_average" (Bson.create_double 3.5) Bson.empty) query_ordered in
 
           let movie_query =
-            lwt movie = Graph.Db.Movie.query ~limit:(Balsa_config.get_int "nb_movie_by_genre") query_min_ordered in
+            lwt movie = Db.Movie.query ~limit:(Balsa_config.get_int "nb_movie_by_genre") query_min_ordered in
             Lwt.return (g, movie)
           in
           build_paralel_query (movie_query::acc) t
@@ -218,7 +218,7 @@ let what_to_watch u_uid_opt =
         read_queries acc thread_list
     in
 
-    lwt genres = Graph.Db.Genre.query Bson.empty in
+    lwt genres = Db.Genre.query Bson.empty in
     let queries = build_paralel_query [] genres in
 
     lwt l = read_queries [] queries in
@@ -234,7 +234,7 @@ let what_to_watch u_uid_opt =
 
   match u_uid_opt with
     | Some u_uid ->
-      lwt u = Graph.Db.User.find u_uid in
+      lwt u = Db.User.find u_uid in
       let rating_nb = List.length u.Graph.User.ratings in
       if rating_nb < Balsa_config.get_int "minimum_rating_for_suggestion" then
         (* load movie by genres since user didn't rate enough movie *)

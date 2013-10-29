@@ -1,0 +1,4 @@
+B ../_build/w2wt
+PKG mongo
+PKG bson
+PKG lwt

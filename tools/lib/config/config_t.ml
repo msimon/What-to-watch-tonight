@@ -23,11 +23,3 @@ type local_configuration = {
   learning: learning;
   minimal_vote_count: int;
 } deriving (Json_ext)
-
-let init () =
-  let config_file =
-    if Array.length Sys.argv < 3 then "config.json"
-    else Sys.argv.(2)
-  in
-
-  Json_utils_local_configuration.of_file config_file

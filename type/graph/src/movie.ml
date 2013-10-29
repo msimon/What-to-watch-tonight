@@ -1,12 +1,6 @@
 {shared{
   type key = Uid.movie Uid.uid deriving (Json, Bson_ext)
 
-  (* n size vector, n = # gender in our case *)
-  type param = {
-    genre_uid : Uid.genre Uid.uid ;
-    value : float ;
-  } deriving (Bson_ext)
-
   type t = {
     uid: key ;
     title: string ;
@@ -19,7 +13,7 @@
     vote_count : int ;
     title_search: string list ; (* title_search is only present here for the database, not for direct use *)
     genres : Uid.genre Uid.uid list ;
-    vector : param list ;
+    vector : Param.t list ;
     imdb_uid: int ;
   } deriving (Bson_ext)
 }}

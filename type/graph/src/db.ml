@@ -22,34 +22,46 @@ sig
 
 end
 
+module type C =
+sig
+  val cache_lifetime : float
+  val cache_size: int
+  val db_ip: string
+  val db_port: int
+  val db_name: string
+  val query_cache_lifetime: int
+end
+
+module type Sig = sig
+  type t deriving (Bson_ext)
+  type key
+
+  val find: key -> t Lwt.t
+
+  val query_one_no_cache : Bson.t -> t option Lwt.t
+  val query_no_cache : ?skip:int -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
+
+  val query_one : ?force:bool -> Bson.t -> t option Lwt.t
+  val query : ?force:bool -> ?skip:int -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
+
+  val insert: t -> unit Lwt.t
+  val update: t -> unit Lwt.t
+  val delete: t -> unit Lwt.t
+
+  val find_and_update: key -> (t -> t) -> t Lwt.t
+
+  val count : ?skip: int -> ?limit: int -> ?query:Bson.t -> unit -> int Lwt.t
+
+end
+
 module type Make =
-  functor (M : M) ->
-  sig
-    type t = M.t deriving (Bson_ext)
-    type key = M.key
+  functor (M : M) -> functor (C : C) -> Sig with type t = M.t with type key = M.key
 
-    val find: key -> t Lwt.t
-
-    val query_one_no_cache : Bson.t -> t option Lwt.t
-    val query_no_cache : ?skip:int -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
-
-    val query_one : ?force:bool -> Bson.t -> t option Lwt.t
-    val query : ?force:bool -> ?skip:int -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
-
-    val insert: t -> unit Lwt.t
-    val update: t -> unit Lwt.t
-    val delete: t -> unit Lwt.t
-
-    val find_and_update: key -> (t -> t) -> t Lwt.t
-
-    val count : ?skip: int -> ?limit: int -> ?query: int -> unit -> int
-
-  end
-
-module Make (M : M) =
+module Make (M : M) (C : C) : Sig with type t = M.t with type key = M.key =
 struct
 
   type t = M.t deriving (Bson_ext)
+  type key = M.key
 
   module Cache = Ocsigen_cache.Make (struct
       type key = M.key
@@ -57,9 +69,10 @@ struct
     end)
 
   (* mongo is Lwt.t lazy.t*)
-  let mongo = lazy (
-    Balsa_config.(Mongo_lwt.create (get_string "db.ip") (get_int "db.port") (get_string "db.name")  M.collection)
-  )
+  (* let mongo = lazy ( *)
+  (*   Balsa_config.(Mongo_lwt.create (get_string "db.ip") (get_int "db.port") (get_string "db.name")  M.collection) *)
+  (* ) *)
+  let mongo = lazy (Mongo_lwt.create C.db_ip C.db_port C.db_name  M.collection)
 
   let ready,set_ready = Lwt.task ()
 
@@ -109,7 +122,8 @@ struct
 
     Lwt.return (Bson_utils_t.from_bson d)
 
-  let cache = Balsa_config.(new Cache.cache find_in_db ~timer:(get_float "cache.cache_lifetime") (get_int "cache.cache_size"))
+  (* let cache = Balsa_config.(new Cache.cache find_in_db ~timer:(get_float "cache.cache_lifetime") (get_int "cache.cache_size")) *)
+  let cache = new Cache.cache find_in_db ~timer:C.cache_lifetime C.cache_size
 
   let find key =
     cache#find key
@@ -170,7 +184,7 @@ struct
 
     with Not_found | Reload_cache ->
       lwt r = query_one_no_cache bson_t in
-      let t = int_of_float (Unix.time ()) + (Balsa_config.get_int "db.query_cache_lifetime") in
+      let t = int_of_float (Unix.time ()) + C.query_cache_lifetime in (* Balsa_config.get_int "db.query_cache_lifetime") in *)
       Hashtbl.replace query_one_htbl bson_t (r,t);
 
       Balsa_option.iter (
@@ -194,7 +208,7 @@ struct
 
     with Not_found | Reload_cache ->
       lwt r = query_no_cache ?skip ?limit ~full bson_t in
-      let t = int_of_float (Unix.time ()) + (Balsa_config.get_int "db.query_cache_lifetime") in
+      let t = int_of_float (Unix.time ()) + C.query_cache_lifetime (* (Balsa_config.get_int "db.query_cache_lifetime")  *)in
       Hashtbl.replace query_htbl (skip,limit,full,bson_t) (r,t);
       Lwt.return r
 
@@ -257,9 +271,6 @@ struct
     Mongo_lwt.count ?skip ?limit ?query mongo
 
 end
-
-let _ =
-  Balsa_config.init ()
 
 module User = Make (User)
 module Movie = Make (Movie)

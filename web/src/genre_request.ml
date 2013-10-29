@@ -8,9 +8,9 @@
 {client{
 
   module M =
-    struct
-      type client_t = genre
-    end
+  struct
+    type client_t = genre
+  end
 
 }}
 
@@ -26,9 +26,9 @@ struct
       name = g.Graph.Genre.name ;
     }
 
-  let find = Graph.Db.Genre.find
+  let find = Db.Genre.find
 
-  let find_all () = Graph.Db.Genre.query ~full:true Bson.empty
+  let find_all () = Db.Genre.query ~full:true Bson.empty
 
 end
 

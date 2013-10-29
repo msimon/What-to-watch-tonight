@@ -1,65 +1,6 @@
-module Param =
-struct
-  (* n size vector, n = # gender in our case *)
-  type param = {
-    genre_uid : int ;
-    value : float ;
-  } deriving (Bson_ext)
-end
+module Graph = Graph_server
 
-module User =
-struct
-  type t = {
-    uid: int ;
-    name: string ;
-    (* ratings: int list ; *)
-    vector : Param.param list ;
-  } deriving (Bson_ext)
-end
-
-module Movie =
-struct
-  type t = {
-    uid: int ;
-    title: string ;
-    (* genres : int list ; *)
-    vector : Param.param list ;
-  } deriving (Bson_ext)
-end
-
-module Rating =
-struct
-  type t = {
-    uid: int ;
-    user_uid: int;
-    movie_uid: int;
-    rating: int ;
-  } deriving (Bson_ext)
-end
-
-module Genre =
-struct
-  type t = {
-    uid: int ;
-    name: string ;
-  } deriving (Bson_ext)
-end
-
-let rec db_fetch_all ?(acc=[]) mongo ~from_bson r =
-  let fetch_one_batch ?(acc=[]) r =
-    let ds = MongoReply.get_document_list r in
-    List.fold_left (
-      fun acc d ->
-        (from_bson d)::acc
-    ) acc ds
-  in
-
-  if MongoReply.get_num_returned r = 0l then Lwt.return acc
-  else begin
-    let acc = fetch_one_batch ~acc r in
-    lwt r = Mongo_lwt.get_more mongo (MongoReply.get_cursor r) in
-    db_fetch_all mongo ~acc ~from_bson r
-  end
+open Config_t
 
 let user_htbl = Hashtbl.create 100
 let movie_htbl = Hashtbl.create 100
@@ -76,19 +17,17 @@ let init_vector =
       Hashtbl.fold (
         fun genre_uid _ acc ->
           {
-            Param.genre_uid = genre_uid ;
-            Param.value = rand ();
+            Graph.Param.genre_uid = genre_uid ;
+            Graph.Param.value = rand ();
           }::acc
       ) genre_htbl []
     | v -> v)
 
-let load_user_params config =
-  let open User in
-  lwt mongo = Config.(Mongo_lwt.create config.ip config.port config.name "users") in
+let load_user_params config user_db =
+  let open Graph.User in
+  let module User_db = (val user_db : Graph.Db.Sig with type t = Graph.User.t and type key = Graph.User.key) in
 
-  lwt r = Mongo_lwt.find mongo in
-
-  lwt users = db_fetch_all mongo ~from_bson:Bson_utils_t.from_bson r in
+  lwt users = User_db.query_no_cache ~full:true Bson.empty in
 
   List.iter (
     fun u ->
@@ -106,20 +45,11 @@ let load_user_params config =
   Lwt.return ()
 
 
-let load_movie_params config =
-  let open Movie in
-  lwt mongo = Config.(Mongo_lwt.create config.ip config.port config.name "movies") in
+let load_movie_params config movie_db =
+  let open Graph.Movie in
+  let module Movie_db = (val movie_db : Graph.Db.Sig with type t = Graph.Movie.t and type key = Graph.Movie.key) in
 
-  lwt r = Mongo_lwt.find mongo in
-  lwt movies = db_fetch_all mongo ~from_bson:Bson_utils_t.from_bson r in
-  (* let movies,_ = *)
-  (*   List.fold_left ( *)
-  (*     fun (acc,n) m -> *)
-  (*       if n >= 100 then (acc,n) *)
-  (*       else (m::acc, n + 1) *)
-  (*   ) ([],0) movies *)
-  (* in *)
-
+  lwt movies = Movie_db.query_no_cache ~full:true Bson.empty in
 
   List.iter (
     fun m ->
@@ -135,12 +65,11 @@ let load_movie_params config =
   Lwt.return ()
 
 
-let load_rating_params config =
-  let open Rating in
-  lwt mongo = Config.(Mongo_lwt.create config.ip config.port config.name "ratings") in
+let load_rating_params config rating_db =
+  let open Graph.Rating in
+  let module Rating_db = (val rating_db : Graph.Db.Sig with type t = Graph.Rating.t and type key = Graph.Rating.key) in
 
-  lwt r = Mongo_lwt.find mongo in
-  lwt ratings = db_fetch_all mongo ~from_bson:Bson_utils_t.from_bson r in
+  lwt ratings = Rating_db.query_no_cache ~full:true Bson.empty in
 
   List.iter (
     fun r ->
@@ -166,23 +95,13 @@ let load_rating_params config =
   Lwt.return ()
 
 
-let load_genre_params config =
-  let open Genre in
-  lwt mongo = Config.(Mongo_lwt.create config.ip config.port config.name "genres") in
-
-  lwt r = Mongo_lwt.find mongo in
-  lwt genres = db_fetch_all mongo ~from_bson:Bson_utils_t.from_bson r in
-  (* let genres,_ = *)
-  (*   List.fold_left ( *)
-  (*     fun (acc,n) g -> *)
-  (*       if n >= 5 then (acc,n) *)
-  (*       else (g::acc, n + 1) *)
-  (*   ) ([],0) genres *)
-  (* in *)
+let load_genre_params config genre_db =
+  let module Genre_db = (val genre_db : Graph.Db.Sig with type t = Graph.Genre.t and type key = Graph.Genre.key) in
+  lwt genres = Genre_db.query_no_cache ~full:true Bson.empty in
 
   List.iter (
     fun g ->
-      Hashtbl.add genre_htbl g.uid g
+      Hashtbl.add genre_htbl g.Graph.Genre.uid g
   ) genres;
 
   Printf.printf "Finished to load %d genres\n%!" (Hashtbl.length genre_htbl);
@@ -192,7 +111,7 @@ let load_genre_params config =
 
 
 let cost vect rating =
-  let open Param in
+  let open Graph in
   (* Theta(j)' * X(i) - y(i,j) *)
   (* let u_v = (Hashtbl.find user_htbl u_uid).User.vector in *)
   (* let m_v = (Hashtbl.find movie_htbl m_uid).Movie.vector in *)
@@ -209,16 +128,17 @@ let cost vect rating =
 
   let v = List.fold_left2 (
       fun cost u m ->
-        if (u.genre_uid <> m.genre_uid) then
+        if (u.Param.genre_uid <> m.Param.genre_uid) then
           failwith "u and m have differente genre_uid..."
         else
-          cost +. (u.value *. m.value)
+          cost +. (u.Param.value *. m.Param.value)
     ) 0. u_v m_v
   in
 
   v -. (float_of_int rating)
 
 let cost_function cost_fun_vect config =
+  let open Graph in
   let j =
     Hashtbl.fold (
       fun _ r j ->
@@ -270,12 +190,13 @@ let cost_function cost_fun_vect config =
 
   (* Printf.printf "movie_req : %f, user_req : %f\n%!" movie_req user_req ; *)
 
-  let j = j /. 2. +. (config.Config.learning.Config.lambda /. 2.) *. movie_req +. (config.Config.learning.Config.lambda /. 2.) *. user_req in
+  let j = j /. 2. +. (config.learning.lambda /. 2.) *. movie_req +. (config.learning.lambda /. 2.) *. user_req in
   Printf.printf "Final j : %f\n\n%!" j;
   j
 
 
 let gradient_descent config =
+  let open Graph in
   let _print_vect u_uid m_uid =
     Printf.printf "in printf vect..";
     let u_v = (Hashtbl.find user_htbl u_uid).User.vector in
@@ -310,7 +231,7 @@ let gradient_descent config =
         let v = List.mapi (
             fun k m_vect ->
               let value = m_vect.Param.value
-                          -. (config.Config.learning.Config.alpha *. ((movie_cost movie k) +. (config.Config.learning.Config.lambda *. m_vect.Param.value)))
+                          -. (config.learning.alpha *. ((movie_cost movie k) +. (config.learning.lambda *. m_vect.Param.value)))
               in
               {
                 m_vect with
@@ -346,7 +267,7 @@ let gradient_descent config =
         let v = List.mapi (
             fun k u_vect ->
               let value = u_vect.Param.value
-                          -. (config.Config.learning.Config.alpha *. ((user_cost user k) +. (config.Config.learning.Config.lambda *. u_vect.Param.value)))
+                          -. (config.learning.alpha *. ((user_cost user k) +. (config.learning.lambda *. u_vect.Param.value)))
               in
               {
                 u_vect with
@@ -397,15 +318,15 @@ let gradient_descent config =
         (* if c = prev_c we may have reach a minima,
            we probably do not want to raise alpha *)
         if c < prev_c then
-          Config.(config.learning.alpha <- config.learning.alpha +. config.learning.alpha *. 0.05) ;
+          (config.learning.alpha <- config.learning.alpha +. config.learning.alpha *. 0.05) ;
 
-        Printf.printf "i: %d, alpha raised: %f\n\n%!" n config.Config.learning.Config.alpha ;
+        Printf.printf "i: %d, alpha raised: %f\n\n%!" n config.learning.alpha ;
 
         iter c (n - 1)
       end else begin
-        Config.(config.learning.alpha <- config.learning.alpha /. 2.);
-        Printf.printf "alpha lowered: %f\n\n%!" config.Config.learning.Config.alpha ;
-        if config.Config.learning.Config.alpha > 0.000005 then
+        config.learning.alpha <- config.learning.alpha /. 2.;
+        Printf.printf "alpha lowered: %f\n\n%!" config.learning.alpha ;
+        if config.learning.alpha > 0.000005 then
           iter prev_c n;
       end
     end
@@ -417,27 +338,27 @@ let gradient_descent config =
 
   Hashtbl.iter (
     fun u_uid user ->
-      Printf.printf "\ndisplay: %d\n%!" u_uid;
+      Printf.printf "\ndisplay: %d\n%!" (Graph.Uid.get_value u_uid);
       List.iteri (
         fun i v ->
-          Printf.printf "%d: uid: %d =>  %.3f\n%!" i v.Param.genre_uid v.Param.value ;
+          Printf.printf "%d: uid: %d =>  %.3f\n%!" i (Graph.Uid.get_value v.Param.genre_uid) v.Param.value ;
       ) user.User.vector
   ) user_htbl
 
 
-let main config =
-  let database_config = config.Config.w2wt_db in
-  lwt _ = load_genre_params database_config in
-  lwt _ = load_movie_params database_config in
-
+let all config user_db movie_db genre_db rating_db =
+  let database_config = config.w2wt_db in
   lwt _ = Lwt.join [
-      load_user_params database_config ;
-      load_rating_params database_config ;
+      load_genre_params database_config genre_db;
+      load_movie_params database_config movie_db;
+      load_user_params database_config user_db;
     ]
   in
+  lwt _ = load_rating_params database_config rating_db in
+
 
   (* pretty much a random number here*)
-  (* Config.(config.alpha <-  50. /. (float_of_int (Hashtbl.length movie_htbl))) ; *)
+  (* (config.alpha <-  50. /. (float_of_int (Hashtbl.length movie_htbl))) ; *)
 
   Printf.printf "Starting gradient descent\n%!";
   gradient_descent config;
@@ -446,22 +367,16 @@ let main config =
   (* test with user 2 and movie 134460, result should be close to 5 *)
 
   (* let u = Hashtbl.find user_htbl 2 in *)
-  let m = Hashtbl.find movie_htbl 134460 in
+  let m = Hashtbl.find movie_htbl (Graph.Uid.unsafe 134460) in
   (* checking the movie is batman the dark knight *)
-  Printf.printf "title: %s \n%!" m.Movie.title;
+  Printf.printf "title: %s \n%!" m.Graph.Movie.title;
 
-  let c = cost (`Uid (2,134460)) 0 in
+  let c = cost (`Uid ((Graph.Uid.unsafe 2),(Graph.Uid.unsafe 134460))) 0 in
   Printf.printf "prediction for user 2 and movie 134460 is %f\n%!" c ;
-  let c = cost (`Uid (2,134219)) 0 in
+  let c = cost (`Uid ((Graph.Uid.unsafe 2),(Graph.Uid.unsafe 134219))) 0 in
   Printf.printf "prediction for user 2 and movie 134219 is %f\n%!" c ;
 
-  let c = cost (`Uid (1,134460)) 0 in
+  let c = cost (`Uid ((Graph.Uid.unsafe 1),(Graph.Uid.unsafe 134460))) 0 in
   Printf.printf "prediction for user 1 and movie 134460 is %f\n%!" c ;
 
-
   Lwt.return_unit
-
-
-let _ =
-  let config = Config.init () in
-  Lwt_main.run (main config)

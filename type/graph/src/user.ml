@@ -1,12 +1,6 @@
 {shared{
   type key = Uid.user Uid.uid deriving (Bson_ext)
 
-  (* n size vector, n = # gender in our case *)
-  type param = {
-    genre_uid : Uid.genre Uid.uid ;
-    value : float ;
-  } deriving (Bson_ext)
-
   type facebook = {
     facebook_uid : string ;
     facebook_access_token : string ;
@@ -18,7 +12,7 @@
     name: string ;
     ratings: Uid.rating Uid.uid list ;
     facebook : facebook option ;
-    vector : param list ;
+    vector : Param.t list ;
   } deriving (Bson_ext)
 }}
 
