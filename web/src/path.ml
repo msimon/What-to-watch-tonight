@@ -76,25 +76,25 @@
 
     val a :
       ?a:[<Html5_types.a_attrib > `Href `OnClick] attrib list ->
-      ?onclick:(#Dom_html.mouseEvent Js.t -> unit) ->
+      ?onclick:(Dom_html.mouseEvent Js.t -> unit) ->
       service:service ->
       'd elt list -> [> 'd Html5_types.a ] elt
 
     val a_action :
       ?a:[<Html5_types.a_attrib > `OnClick] attrib list ->
-      onclick:(#Dom_html.mouseEvent Js.t -> unit) ->
+      onclick:(Dom_html.mouseEvent Js.t -> unit) ->
       'd elt list -> [> 'd Html5_types.a ] elt
 
     val a_extern :
       ?a:[<Html5_types.a_attrib > `Href `OnClick `Target] attrib list ->
-      ?onclick:(#Dom_html.mouseEvent Js.t -> unit) ->
+      ?onclick:(Dom_html.mouseEvent Js.t -> unit) ->
       href:string ->
       'd elt list -> [> 'd Html5_types.a ] elt
 
     val button :
       ?button_type:[< `Button | `Submit | `Reset  > `Button ] ->
       ?a:[<Html5_types.button_attrib > `OnClick `Button_Type ] attrib list ->
-      ?onclick:(#Dom_html.mouseEvent Js.t -> unit) ->
+      ?onclick:(Dom_html.mouseEvent Js.t -> unit) ->
       [<Html5_types.button_content] elt list -> [> Html5_types.button ] elt
 
   end = struct
@@ -119,13 +119,13 @@
       Raw.a ~a:([
           a_href ("/" ^ (string_of_service service));
           a_onclick (fun e ->
-              middleClick e ||
-              (
-                onclick e;
-                goto service;
-                Dom_html.stopPropagation e ;
-                false
-              )
+              let p = middleClick e || (
+                  onclick e;
+                  goto service;
+                  Dom_html.stopPropagation e ;
+                  false
+                ) in
+              if p then (raise Eliom_lib.False)
             )]@a) content
 
     let a_action ?(a=[]) ~onclick content =
@@ -134,7 +134,7 @@
           a_onclick (fun e ->
               onclick e;
               Dom_html.stopPropagation e ;
-              false
+              (raise Eliom_lib.False)
             )]@a) content
 
 
@@ -143,19 +143,22 @@
           a_href href;
           a_target "_blank";
           a_onclick (fun e ->
-              middleClick e ||
+              let p = middleClick e ||
               (
                 onclick e;
                 Dom_html.stopPropagation e ;
-                true
-              )
+                false;
+              ) in
+              if p then (raise Eliom_lib.False)
             )]@a) content
 
     let button ?(button_type=`Button)?(a=[]) ?onclick content =
       let onclick = Balsa_option.map (fun f ->
           (fun ev ->
              Dom_html.stopPropagation ev;
-             f ev;false)
+             f ev;
+             (raise Eliom_lib.False)
+          )
         ) onclick in
       let a = match onclick with
         | None -> a

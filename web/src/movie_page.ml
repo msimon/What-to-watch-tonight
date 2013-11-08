@@ -87,7 +87,7 @@
                   fun _ ->
                     update_rating (Some n);
                     Lwt.async (fun _ -> %rate (m_uid,n));
-                    false
+                    raise Eliom_lib.False
                 )
               in
               let selected n =

@@ -31,7 +31,7 @@
               ]
             | None ->
               div [
-                button ~button_type:`Button ~a:[ a_onclick (fun _ -> Lwt.async (fun _ -> Connection.facebook_connect ()); false) ] [ pcdata "facebook connect" ];
+                button ~button_type:`Button ~a:[ a_onclick (fun _ -> Lwt.async (fun _ -> Connection.facebook_connect ()); raise Eliom_lib.False) ] [ pcdata "facebook connect" ];
               ]
         ) Connection.connected
       )
