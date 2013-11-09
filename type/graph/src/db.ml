@@ -72,14 +72,14 @@ struct
   (* let mongo = lazy ( *)
   (*   Balsa_config.(Mongo_lwt.create (get_string "db.ip") (get_int "db.port") (get_string "db.name")  M.collection) *)
   (* ) *)
-  let mongo = lazy (Mongo_lwt.create C.db_ip C.db_port C.db_name  M.collection)
+  let mongo = Mongo_lwt.create C.db_ip C.db_port C.db_name  M.collection
 
   let ready,set_ready = Lwt.task ()
 
   let _ =
     Lwt.async (
       fun _ ->
-        lwt mongo = Lazy.force mongo in
+        lwt mongo = mongo in
 
         (* get the last uid, and set it in Uid.uid*)
         let q = MongoMetaOp.orderBy (Bson.add_element M.uid_field (Bson.create_int32 (-1l)) Bson.empty) Bson.empty in
@@ -87,13 +87,12 @@ struct
 
         lwt r = Mongo_lwt.find_q_s_one mongo q s in
 
-        let n = match MongoReply.get_document_list r with
-          | [] -> 1
+        let _ = match MongoReply.get_document_list r with
+          | [] -> ()
           | h::_ ->
             let n = Bson.get_int64 (Bson.get_element M.uid_field h) in
-            Int64.to_int n
+            Uid.set_uid M.uid_typ (Uid.unsafe (Int64.to_int n)) ;
         in
-        Uid.set_uid M.uid_typ (Uid.unsafe n) ;
 
         (* add index *)
         lwt _ =
@@ -110,7 +109,7 @@ struct
 
 
   let find_in_db key =
-    lwt mongo = Lazy.force mongo in
+    lwt mongo = mongo in
     let bson_search = M.search key in
 
     lwt r = Mongo_lwt.find_q_one mongo bson_search in
@@ -129,7 +128,7 @@ struct
     cache#find key
 
   let query_one_no_cache bson_t =
-    lwt mongo = Lazy.force mongo in
+    lwt mongo = mongo in
     lwt r = Mongo_lwt.find_q_one mongo bson_t in
 
     match MongoReply.get_document_list r with
@@ -138,7 +137,7 @@ struct
 
 
   let query_no_cache ?skip ?limit ?(full=false) bson_t =
-    lwt mongo = Lazy.force mongo in
+    lwt mongo = mongo in
     lwt r =
       match limit with
         | Some l -> Mongo_lwt.find_q_of_num ?skip mongo bson_t l
@@ -216,7 +215,7 @@ struct
 
   let insert t =
     lwt _ = ready in
-    lwt mongo = Lazy.force mongo in
+    lwt mongo = mongo in
     lwt _ = Mongo_lwt.insert mongo [ Bson_utils_t.to_bson t ] in
 
     cache#add (M.key t) t;
@@ -225,7 +224,7 @@ struct
 
   let update t =
     lwt _ = ready in
-    lwt mongo = Lazy.force mongo in
+    lwt mongo = mongo in
     lwt _ = Mongo_lwt.update_one mongo ((M.search (M.key t)),(Bson_utils_t.to_bson t)) in
 
     cache#remove (M.key t) ;
@@ -235,7 +234,7 @@ struct
 
   let delete t =
     lwt _ = ready in
-    lwt mongo = Lazy.force mongo in
+    lwt mongo = mongo in
     lwt _ = Mongo_lwt.delete_one mongo (M.search (M.key t)) in
 
     cache#remove (M.key t) ;
@@ -248,10 +247,6 @@ struct
   *)
   let find_and_update =
     let mutex = Lwt_mutex.create () in
-    (* let finalize () = *)
-    (*   Lwt_mutex.unlock mutex; *)
-    (*   Lwt.return_unit *)
-    (* in *)
     (fun key update_fun ->
        lwt _ = Lwt_mutex.lock mutex in
        lwt d = find key in
@@ -267,7 +262,7 @@ struct
     )
 
   let count ?skip ?limit ?query () =
-    lwt mongo = Lazy.force mongo in
+    lwt mongo = mongo in
     Mongo_lwt.count ?skip ?limit ?query mongo
 
 end

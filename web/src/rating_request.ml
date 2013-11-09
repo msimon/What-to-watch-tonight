@@ -3,7 +3,7 @@ type ('a,_) opt =
   | Exception : ('a,'a) opt
 
 
-let get_rating : type t. (Db.Rating.t,t) opt -> Graph.Movie.key -> Graph.User.key -> t Lwt.t  =
+let get_rating : type t. (Db.Rating.t,t) opt -> Graph.Movie.key -> Graph.User.key -> t Lwt.t =
   fun opt m_uid u_uid ->
     let query = Bson.add_element "user_uid" (Graph.User.bson_uid u_uid) Bson.empty in
     let query = Bson.add_element "movie_uid" (Graph.Movie.bson_uid m_uid) query in
@@ -12,10 +12,7 @@ let get_rating : type t. (Db.Rating.t,t) opt -> Graph.Movie.key -> Graph.User.ke
 
     let t : t =
       match opt with
-        | Option ->
-          Balsa_option.case
-            (fun r -> Some r)
-            (fun _ -> None) r
+        | Option -> r
         | Exception ->
           Balsa_option.case
             (fun r -> r)

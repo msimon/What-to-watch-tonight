@@ -41,9 +41,9 @@ let remove_useless_word =
 
 
 let movie config u genre_db movie_db rating_db =
-  let module Genre_db = (val genre_db : Graph.Db.Sig with type t = Graph.Genre.t and type key = Graph.Genre.key) in
-  let module Movie_db = (val movie_db : Graph.Db.Sig with type t = Graph.Movie.t and type key = Graph.Movie.key) in
-  let module Rating_db = (val rating_db : Graph.Db.Sig with type t = Graph.Rating.t and type key = Graph.Rating.key) in
+  let module Genre_db = (val genre_db : Graph_server.Db.Sig with type t = Graph_server.Genre.t and type key = Graph_server.Genre.key) in
+  let module Movie_db = (val movie_db : Graph_server.Db.Sig with type t = Graph_server.Movie.t and type key = Graph_server.Movie.key) in
+  let module Rating_db = (val rating_db : Graph_server.Db.Sig with type t = Graph_server.Rating.t and type key = Graph_server.Rating.key) in
 
   lwt mg_api = Mongo.create config.api_db.ip config.api_db.port config.api_db.name "movies" in
 
@@ -152,7 +152,7 @@ let movie config u genre_db movie_db rating_db =
 
 
 let genre config genre_db =
-  let module Genre_db = (val genre_db : Graph.Db.Sig with type t = Graph.Genre.t and type key = Graph.Genre.key) in
+  let module Genre_db = (val genre_db : Graph_server.Db.Sig with type t = Graph_server.Genre.t and type key = Graph_server.Genre.key) in
 
   lwt mg_api = Mongo.create config.api_db.ip config.api_db.port config.api_db.name "genres" in
 
@@ -199,7 +199,7 @@ let genre config genre_db =
 
 
 let user config user_db =
-  let module User_db = (val user_db : Graph.Db.Sig with type t = Graph.User.t and type key = Graph.User.key) in
+  let module User_db = (val user_db : Graph_server.Db.Sig with type t = Graph_server.User.t and type key = Graph_server.User.key) in
 
   let check_user = Bson.add_element "name" (Bson.create_string "themoviedb") Bson.empty in
   lwt moviedb_user =
@@ -229,4 +229,4 @@ let convert config user_db movie_db genre_db rating_db =
     Lwt.return_unit
   in
 
-  Lwt_main.run (run ())
+  run ()

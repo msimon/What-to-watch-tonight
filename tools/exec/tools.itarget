@@ -1,3 +1,4 @@
 moviedb/moviedb_wrapper.native
 convert/moviedb_to_w2wt.native
 learning/learn.native
+all/all.native

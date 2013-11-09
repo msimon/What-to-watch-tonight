@@ -25,19 +25,17 @@ let init_vector =
 
 let load_user_params config user_db =
   let open Graph.User in
-  let module User_db = (val user_db : Graph.Db.Sig with type t = Graph.User.t and type key = Graph.User.key) in
+  let module User_db = (val user_db : Graph_server.Db.Sig with type t = Graph_server.User.t and type key = Graph_server.User.key) in
 
   lwt users = User_db.query_no_cache ~full:true Bson.empty in
 
   List.iter (
     fun u ->
-      (* if u.uid > 1 then begin *)
-        let u = {
-          u with
-            vector = init_vector u.vector
-        } in
-        Hashtbl.add user_htbl u.uid u
-      (* end *)
+      let u = {
+        u with
+          vector = init_vector u.vector
+      } in
+      Hashtbl.add user_htbl u.uid u
   ) users;
 
   Printf.printf "Finished to load %d users\n%!" (Hashtbl.length user_htbl);
@@ -47,7 +45,7 @@ let load_user_params config user_db =
 
 let load_movie_params config movie_db =
   let open Graph.Movie in
-  let module Movie_db = (val movie_db : Graph.Db.Sig with type t = Graph.Movie.t and type key = Graph.Movie.key) in
+  let module Movie_db = (val movie_db : Graph_server.Db.Sig with type t = Graph_server.Movie.t and type key = Graph_server.Movie.key) in
 
   lwt movies = Movie_db.query_no_cache ~full:true Bson.empty in
 
@@ -67,7 +65,7 @@ let load_movie_params config movie_db =
 
 let load_rating_params config rating_db =
   let open Graph.Rating in
-  let module Rating_db = (val rating_db : Graph.Db.Sig with type t = Graph.Rating.t and type key = Graph.Rating.key) in
+  let module Rating_db = (val rating_db : Graph_server.Db.Sig with type t = Graph_server.Rating.t and type key = Graph_server.Rating.key) in
 
   lwt ratings = Rating_db.query_no_cache ~full:true Bson.empty in
 
@@ -96,7 +94,7 @@ let load_rating_params config rating_db =
 
 
 let load_genre_params config genre_db =
-  let module Genre_db = (val genre_db : Graph.Db.Sig with type t = Graph.Genre.t and type key = Graph.Genre.key) in
+  let module Genre_db = (val genre_db : Graph_server.Db.Sig with type t = Graph_server.Genre.t and type key = Graph_server.Genre.key) in
   lwt genres = Genre_db.query_no_cache ~full:true Bson.empty in
 
   List.iter (
@@ -113,8 +111,6 @@ let load_genre_params config genre_db =
 let cost vect rating =
   let open Graph in
   (* Theta(j)' * X(i) - y(i,j) *)
-  (* let u_v = (Hashtbl.find user_htbl u_uid).User.vector in *)
-  (* let m_v = (Hashtbl.find movie_htbl m_uid).Movie.vector in *)
 
   let u_v,m_v =
     match vect with
@@ -348,8 +344,9 @@ let gradient_descent config =
 
 let all config user_db movie_db genre_db rating_db =
   let database_config = config.w2wt_db in
+  (* genre must be load before since we can use it to setup inital vector *)
+  lwt _ = load_genre_params database_config genre_db in
   lwt _ = Lwt.join [
-      load_genre_params database_config genre_db;
       load_movie_params database_config movie_db;
       load_user_params database_config user_db;
     ]
@@ -364,19 +361,19 @@ let all config user_db movie_db genre_db rating_db =
   gradient_descent config;
   Printf.printf "End gradient descent\n%!";
 
-  (* test with user 2 and movie 134460, result should be close to 5 *)
+  (* (\* test with user 2 and movie 134460, result should be close to 5 *\) *)
 
-  (* let u = Hashtbl.find user_htbl 2 in *)
-  let m = Hashtbl.find movie_htbl (Graph.Uid.unsafe 134460) in
-  (* checking the movie is batman the dark knight *)
-  Printf.printf "title: %s \n%!" m.Graph.Movie.title;
+  (* (\* let u = Hashtbl.find user_htbl 2 in *\) *)
+  (* let m = Hashtbl.find movie_htbl (Graph.Uid.unsafe 127533) in *)
+  (* (\* checking the movie is batman the dark knight *\) *)
+  (* Printf.printf "title: %s \n%!" m.Graph.Movie.title; *)
 
-  let c = cost (`Uid ((Graph.Uid.unsafe 2),(Graph.Uid.unsafe 134460))) 0 in
-  Printf.printf "prediction for user 2 and movie 134460 is %f\n%!" c ;
-  let c = cost (`Uid ((Graph.Uid.unsafe 2),(Graph.Uid.unsafe 134219))) 0 in
-  Printf.printf "prediction for user 2 and movie 134219 is %f\n%!" c ;
+  (* let c = cost (`Uid ((Graph.Uid.unsafe 2),(Graph.Uid.unsafe 134460))) 0 in *)
+  (* Printf.printf "prediction for user 2 and movie 134460 is %f\n%!" c ; *)
+  (* let c = cost (`Uid ((Graph.Uid.unsafe 2),(Graph.Uid.unsafe 134219))) 0 in *)
+  (* Printf.printf "prediction for user 2 and movie 134219 is %f\n%!" c ; *)
 
-  let c = cost (`Uid ((Graph.Uid.unsafe 1),(Graph.Uid.unsafe 134460))) 0 in
-  Printf.printf "prediction for user 1 and movie 134460 is %f\n%!" c ;
+  (* let c = cost (`Uid ((Graph.Uid.unsafe 1),(Graph.Uid.unsafe 134460))) 0 in *)
+  (* Printf.printf "prediction for user 1 and movie 134460 is %f\n%!" c ; *)
 
   Lwt.return_unit
