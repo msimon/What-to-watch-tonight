@@ -14,6 +14,8 @@ let uid_field = "uid"
 type uid_typ = Uid.rating
 let uid_typ = Uid.Rating
 
+let forbiden_update = []
+
 let search uid =
   let uid = Uid.get_value uid in
   Bson.add_element "uid" (Bson.create_int64 (Int64.of_int uid)) Bson.empty

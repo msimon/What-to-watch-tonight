@@ -3,14 +3,15 @@ module Graph = Graph_server
 open Config_t
 
 let user_htbl = Hashtbl.create 100
-let movie_htbl = Hashtbl.create 100
-let m_rating_htbl = Hashtbl.create 100
-let u_rating_htbl = Hashtbl.create 100
-let rating_htbl = Hashtbl.create 100
+let movie_htbl = Hashtbl.create 40000
+let m_rating_htbl = Hashtbl.create 40000
+let u_rating_htbl = Hashtbl.create 40000
+let rating_htbl = Hashtbl.create 40000
 let genre_htbl = Hashtbl.create 100
 
 (* if the vector is empty, we set random value between -1 to 1 in it*)
 let init_vector =
+  Random.self_init ();
   let rand () = (Random.float 0.01) -. 0.005 in
   (function
     | [] ->
@@ -31,14 +32,17 @@ let load_user_params config user_db =
 
   List.iter (
     fun u ->
-      let u = {
-        u with
-          vector = init_vector u.vector
-      } in
-      Hashtbl.add user_htbl u.uid u
+      if u.uid = (Graph.Uid.unsafe 1) && u.name = "themoviedb" then ()
+      else begin
+        let u = {
+          u with
+            vector = init_vector u.vector
+        } in
+        Hashtbl.add user_htbl u.uid u
+      end
   ) users;
 
-  Printf.printf "Finished to load %d users\n%!" (Hashtbl.length user_htbl);
+  Balsa_log.info "Finished to load %d users" (Hashtbl.length user_htbl);
 
   Lwt.return ()
 
@@ -58,7 +62,7 @@ let load_movie_params config movie_db =
       Hashtbl.add movie_htbl m.uid m
   ) movies;
 
-  Printf.printf "Finished to load %d movies\n%!" (Hashtbl.length movie_htbl);
+  Balsa_log.info "Finished to load %d movies" (Hashtbl.length movie_htbl);
 
   Lwt.return ()
 
@@ -88,7 +92,7 @@ let load_rating_params config rating_db =
       end else ()
   ) ratings;
 
-  Printf.printf "Finished to load %d ratings\n%!" (Hashtbl.length rating_htbl);
+  Balsa_log.info "Finished to load %d ratings" (Hashtbl.length rating_htbl);
 
   Lwt.return ()
 
@@ -102,7 +106,7 @@ let load_genre_params config genre_db =
       Hashtbl.add genre_htbl g.Graph.Genre.uid g
   ) genres;
 
-  Printf.printf "Finished to load %d genres\n%!" (Hashtbl.length genre_htbl);
+  Balsa_log.info "Finished to load %d genres" (Hashtbl.length genre_htbl);
 
   Lwt.return ()
 
@@ -185,23 +189,21 @@ let cost_function cost_fun_vect config =
   in
 
   (* Printf.printf "movie_req : %f, user_req : %f\n%!" movie_req user_req ; *)
-
   let j = j /. 2. +. (config.learning.lambda /. 2.) *. movie_req +. (config.learning.lambda /. 2.) *. user_req in
-  Printf.printf "Final j : %f\n\n%!" j;
+  Balsa_log.debug "Final j : %f" j;
   j
-
 
 let gradient_descent config =
   let open Graph in
   let _print_vect u_uid m_uid =
-    Printf.printf "in printf vect..";
+    Balsa_log.debug "in printf vect..";
     let u_v = (Hashtbl.find user_htbl u_uid).User.vector in
     let m_v = (Hashtbl.find movie_htbl m_uid).Movie.vector in
-    Printf.printf " done \n%!";
+    Balsa_log.debug " done";
 
     List.iter2 (
       fun u_v m_v ->
-        Printf.printf "u: %f, m: %f\n%!" u_v.Param.value m_v.Param.value;
+        Balsa_log.debug "u: %f, m: %f" u_v.Param.value m_v.Param.value;
     ) u_v m_v
   in
 
@@ -309,19 +311,17 @@ let gradient_descent config =
             }
         ) new_user_vect;
 
-        Printf.printf ".%!";
-
         (* if c = prev_c we may have reach a minima,
            we probably do not want to raise alpha *)
         if c < prev_c then
           (config.learning.alpha <- config.learning.alpha +. config.learning.alpha *. 0.05) ;
 
-        Printf.printf "i: %d, alpha raised: %f\n\n%!" n config.learning.alpha ;
+        Balsa_log.info "i: %d, alpha raised: %f" n config.learning.alpha ;
 
         iter c (n - 1)
       end else begin
         config.learning.alpha <- config.learning.alpha /. 2.;
-        Printf.printf "alpha lowered: %f\n\n%!" config.learning.alpha ;
+        Balsa_log.warning "alpha lowered: %f" config.learning.alpha ;
         if config.learning.alpha > 0.000005 then
           iter prev_c n;
       end
@@ -330,19 +330,22 @@ let gradient_descent config =
 
   let c = cost_function `CFUid config in
 
-  iter c 20;
+  iter c 100;
 
   Hashtbl.iter (
     fun u_uid user ->
-      Printf.printf "\ndisplay: %d\n%!" (Graph.Uid.get_value u_uid);
+      Balsa_log.debug "\ndisplay: %d" (Graph.Uid.get_value u_uid);
       List.iteri (
         fun i v ->
-          Printf.printf "%d: uid: %d =>  %.3f\n%!" i (Graph.Uid.get_value v.Param.genre_uid) v.Param.value ;
+          Balsa_log.debug "%d: uid: %d =>  %.3f" i (Graph.Uid.get_value v.Param.genre_uid) v.Param.value ;
       ) user.User.vector
   ) user_htbl
 
 
 let all config user_db movie_db genre_db rating_db =
+  let module Movie_db = (val movie_db : Graph_server.Db.Sig with type t = Graph_server.Movie.t and type key = Graph_server.Movie.key) in
+  let module User_db = (val user_db : Graph_server.Db.Sig with type t = Graph_server.User.t and type key = Graph_server.User.key) in
+
   let database_config = config.w2wt_db in
   (* genre must be load before since we can use it to setup inital vector *)
   lwt _ = load_genre_params database_config genre_db in
@@ -353,27 +356,30 @@ let all config user_db movie_db genre_db rating_db =
   in
   lwt _ = load_rating_params database_config rating_db in
 
-
-  (* pretty much a random number here*)
-  (* (config.alpha <-  50. /. (float_of_int (Hashtbl.length movie_htbl))) ; *)
-
-  Printf.printf "Starting gradient descent\n%!";
   gradient_descent config;
-  Printf.printf "End gradient descent\n%!";
 
-  (* (\* test with user 2 and movie 134460, result should be close to 5 *\) *)
+  (* update user and movie vector in db *)
+  let movies_update = Hashtbl.fold (
+      fun key v acc ->
+        let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) v.Graph.Movie.vector in
+        let modifier = Bson.add_element "vector" vector Bson.empty in
 
-  (* (\* let u = Hashtbl.find user_htbl 2 in *\) *)
-  (* let m = Hashtbl.find movie_htbl (Graph.Uid.unsafe 127533) in *)
-  (* (\* checking the movie is batman the dark knight *\) *)
-  (* Printf.printf "title: %s \n%!" m.Graph.Movie.title; *)
+        (Movie_db.update ~modifier v)::acc
+    ) movie_htbl []
+  in
+  lwt _ = Lwt_list.iter_p (fun m -> lwt _ = m in Lwt.return_unit) movies_update in
 
-  (* let c = cost (`Uid ((Graph.Uid.unsafe 2),(Graph.Uid.unsafe 134460))) 0 in *)
-  (* Printf.printf "prediction for user 2 and movie 134460 is %f\n%!" c ; *)
-  (* let c = cost (`Uid ((Graph.Uid.unsafe 2),(Graph.Uid.unsafe 134219))) 0 in *)
-  (* Printf.printf "prediction for user 2 and movie 134219 is %f\n%!" c ; *)
+  let users_update = Hashtbl.fold (
+      fun key v acc ->
+        let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) v.Graph.User.vector in
+        let modifier = Bson.add_element "vector" vector Bson.empty in
 
-  (* let c = cost (`Uid ((Graph.Uid.unsafe 1),(Graph.Uid.unsafe 134460))) 0 in *)
-  (* Printf.printf "prediction for user 1 and movie 134460 is %f\n%!" c ; *)
+        (User_db.update ~modifier v)::acc
+    ) user_htbl []
+  in
+  lwt _ = Lwt_list.iter_p (fun m -> lwt _ = m in Lwt.return_unit) users_update in
 
   Lwt.return_unit
+
+let user_movie_cost user movie =
+  cost (`Vect (user.Graph.User.vector, movie.Graph.Movie.vector))

@@ -21,6 +21,10 @@ let uid_field = "uid"
 type uid_typ = Uid.user
 let uid_typ = Uid.User
 
+let forbiden_update = [
+  "vector"
+]
+
 let search uid =
   let uid = Uid.get_value uid in
   Bson.add_element "uid" (Bson.create_int64 (Int64.of_int uid)) Bson.empty

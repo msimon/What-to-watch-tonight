@@ -7,6 +7,9 @@ sig
   type key deriving (Bson_ext)
   type uid_typ
 
+  (* forbiden_update value can only be updated with a $set *)
+  val forbiden_update : string list
+
   val collection : string
   val uid_field : string
   val uid_typ: uid_typ Uid.typ
@@ -45,7 +48,7 @@ module type Sig = sig
   val query : ?force:bool -> ?skip:int -> ?limit:int -> ?full:bool -> Bson.t -> t list Lwt.t
 
   val insert: t -> unit Lwt.t
-  val update: t -> unit Lwt.t
+  val update: ?modifier:Bson.t -> t -> unit Lwt.t
   val delete: t -> unit Lwt.t
 
   val find_and_update: key -> (t -> t) -> t Lwt.t
@@ -81,7 +84,7 @@ struct
       fun _ ->
         lwt mongo = mongo in
 
-        (* get the last uid, and set it in Uid.uid*)
+        (* get the last uid, and set it in Uid.uid *)
         let q = MongoMetaOp.orderBy (Bson.add_element M.uid_field (Bson.create_int32 (-1l)) Bson.empty) Bson.empty in
         let s = Bson.add_element M.uid_field (Bson.create_int32 1l) Bson.empty in
 
@@ -121,7 +124,6 @@ struct
 
     Lwt.return (Bson_utils_t.from_bson d)
 
-  (* let cache = Balsa_config.(new Cache.cache find_in_db ~timer:(get_float "cache.cache_lifetime") (get_int "cache.cache_size")) *)
   let cache = new Cache.cache find_in_db ~timer:C.cache_lifetime C.cache_size
 
   let find key =
@@ -183,7 +185,7 @@ struct
 
     with Not_found | Reload_cache ->
       lwt r = query_one_no_cache bson_t in
-      let t = int_of_float (Unix.time ()) + C.query_cache_lifetime in (* Balsa_config.get_int "db.query_cache_lifetime") in *)
+      let t = int_of_float (Unix.time ()) + C.query_cache_lifetime in
       Hashtbl.replace query_one_htbl bson_t (r,t);
 
       Balsa_option.iter (
@@ -207,11 +209,11 @@ struct
 
     with Not_found | Reload_cache ->
       lwt r = query_no_cache ?skip ?limit ~full bson_t in
-      let t = int_of_float (Unix.time ()) + C.query_cache_lifetime (* (Balsa_config.get_int "db.query_cache_lifetime")  *)in
+      let t = int_of_float (Unix.time ()) + C.query_cache_lifetime in
       Hashtbl.replace query_htbl (skip,limit,full,bson_t) (r,t);
       Lwt.return r
 
-  (* insert/update/delete must wait for the db to be ready *)
+  (* insert/update/delete must wait for the db to be ready (Uid.uid need to be set first) *)
 
   let insert t =
     lwt _ = ready in
@@ -222,10 +224,23 @@ struct
 
     Lwt.return_unit
 
-  let update t =
+  let update ?modifier t =
     lwt _ = ready in
     lwt mongo = mongo in
-    lwt _ = Mongo_lwt.update_one mongo ((M.search (M.key t)),(Bson_utils_t.to_bson t)) in
+    let modifier =
+      match modifier with
+        | Some modifier -> modifier
+        | None ->
+          let bson = Bson_utils_t.to_bson t in
+          List.fold_left (
+            fun bson forbiden ->
+              Bson.remove_element forbiden bson
+          ) bson M.forbiden_update
+    in
+
+    let modifier = Bson.add_element "$set" (Bson.create_doc_element modifier) Bson.empty in
+
+    lwt _ = Mongo_lwt.update_one mongo ((M.search (M.key t)), modifier) in
 
     cache#remove (M.key t) ;
     cache#add (M.key t) t;
