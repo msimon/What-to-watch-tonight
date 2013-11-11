@@ -5,4 +5,4 @@ let _ =
   let rating_db = (module Db.Rating : Graph_server.Db.Sig with type t = Graph_server.Rating.t and type key = Graph_server.Rating.key) in
   let config = Config.get () in
 
-  Lwt_main.run (Learning.Main.all config user_db movie_db genre_db rating_db)
+  Lwt_main.run (Learning.Main.batch config user_db movie_db genre_db rating_db)
