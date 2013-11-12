@@ -113,7 +113,6 @@
           || Js.to_bool ev##metaKey
         | _ -> false
 
-
     let a ?(a=[]) ?(onclick=(fun _ -> ())) ~service content =
       let a = (a :> [<Html5_types.a_attrib > `Href `OnClick] attrib list) in
       Raw.a ~a:([
@@ -125,7 +124,7 @@
                   Dom_html.stopPropagation e ;
                   false
                 ) in
-              if p then (raise Eliom_lib.False)
+              if not p then (raise Eliom_lib.False)
             )]@a) content
 
     let a_action ?(a=[]) ~onclick content =
@@ -149,7 +148,7 @@
                 Dom_html.stopPropagation e ;
                 false;
               ) in
-              if p then (raise Eliom_lib.False)
+              if not p then (raise Eliom_lib.False)
             )]@a) content
 
     let button ?(button_type=`Button)?(a=[]) ?onclick content =
