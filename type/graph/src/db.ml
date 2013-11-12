@@ -32,7 +32,7 @@ sig
   val db_ip: string
   val db_port: int
   val db_name: string
-  val query_cache_lifetime: int
+  val query_cache_lifetime: float
 end
 
 module type Sig = sig
@@ -66,16 +66,30 @@ struct
   type t = M.t deriving (Bson_ext)
   type key = M.key
 
+  type query_key =
+    | One of Bson.t
+    | Multi of (int option * int option * bool  * Bson.t)
+
+  type query_value =
+    | One_v of t option
+    | Multi_v of t list
+
   module Cache = Ocsigen_cache.Make (struct
       type key = M.key
       type value = t
+    end)
+
+
+  module Query_cache = Ocsigen_cache.Make (struct
+      type key = query_key
+      type value = query_value
     end)
 
   (* mongo is Lwt.t lazy.t*)
   (* let mongo = lazy ( *)
   (*   Balsa_config.(Mongo_lwt.create (get_string "db.ip") (get_int "db.port") (get_string "db.name")  M.collection) *)
   (* ) *)
-  let mongo = Mongo_lwt.create C.db_ip C.db_port C.db_name  M.collection
+  let mongo = Mongo_lwt.create C.db_ip C.db_port C.db_name M.collection
 
   let ready,set_ready = Lwt.task ()
 
@@ -137,7 +151,6 @@ struct
       | [ ] -> Lwt.return_none
       | h::_ -> Lwt.return (Some (Bson_utils_t.from_bson h))
 
-
   let query_no_cache ?skip ?limit ?(full=false) bson_t =
     lwt mongo = mongo in
     lwt r =
@@ -170,48 +183,33 @@ struct
 
     Lwt.return (List.rev l)
 
-  let query_one_htbl = Hashtbl.create 100
-  let query_htbl = Hashtbl.create 100
+
+  let query_cache_find =
+    function
+      | One bson_t ->
+        lwt r = query_one_no_cache bson_t in
+        Lwt.return (One_v r)
+      | Multi (skip,limit,full,bson_t) ->
+        lwt r = query_no_cache ?skip ?limit ~full bson_t in
+        Lwt.return (Multi_v r)
+
+
+  let query_cache = new Query_cache.cache query_cache_find ~timer:C.query_cache_lifetime C.cache_size
 
   let query_one ?(force=false) bson_t =
-    try
-      if force then raise Reload_cache ;
-
-      let (r,t) = Hashtbl.find query_one_htbl bson_t in
-      let n = int_of_float (Unix.time ()) in
-
-      if n > t then (raise Reload_cache)
-      else Lwt.return r
-
-    with Not_found | Reload_cache ->
-      lwt r = query_one_no_cache bson_t in
-      let t = int_of_float (Unix.time ()) + C.query_cache_lifetime in
-      Hashtbl.replace query_one_htbl bson_t (r,t);
-
-      Balsa_option.iter (
-        fun t ->
-          cache#remove (M.key t) ;
-          cache#add (M.key t) t;
-      ) r;
-
-      Lwt.return r
+    if force then query_cache#remove (One bson_t) ;
+    match_lwt query_cache#find (One bson_t) with
+      | One_v r -> Lwt.return r
+      | Multi_v _ -> assert false
 
 
   let query ?(force=false) ?skip ?limit ?(full=false) bson_t =
-    try
-      if force then raise Reload_cache ;
+    if force then query_cache#remove (Multi (skip,limit,full,bson_t)) ;
 
-      let (r,t) = Hashtbl.find query_htbl (skip,limit,full,bson_t) in
-      let n = int_of_float (Unix.time ()) in
+    match_lwt query_cache#find (Multi (skip,limit,full,bson_t)) with
+      | One_v r -> assert false
+      | Multi_v r ->  Lwt.return r
 
-      if n > t then (raise Reload_cache)
-      else Lwt.return r
-
-    with Not_found | Reload_cache ->
-      lwt r = query_no_cache ?skip ?limit ~full bson_t in
-      let t = int_of_float (Unix.time ()) + C.query_cache_lifetime in
-      Hashtbl.replace query_htbl (skip,limit,full,bson_t) (r,t);
-      Lwt.return r
 
   (* insert/update/delete must wait for the db to be ready (Uid.uid need to be set first) *)
 

@@ -74,7 +74,7 @@ let cache_size = Balsa_config.get_int "cache.cache_size"
 let db_ip = Balsa_config.get_string "w2wt_db.ip"
 let db_port = Balsa_config.get_int "w2wt_db.port"
 let db_name = Balsa_config.get_string "w2wt_db.name"
-let query_cache_lifetime = Balsa_config.get_int "db.query_cache_lifetime"
+let query_cache_lifetime = Balsa_config.get_float "db.query_cache_lifetime"
 
 
 {client{
