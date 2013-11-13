@@ -3,7 +3,7 @@
   let what_to_watch =
     server_function Json.t<unit> (
       fun _ ->
-        lwt u_uid_opt = Connection.get_uid () in
+        lwt u_uid_opt = Connection.get_uid_opt () in
         Movie_request.what_to_watch u_uid_opt
     )
 

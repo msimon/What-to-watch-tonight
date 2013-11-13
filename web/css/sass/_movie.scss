@@ -1,3 +1,52 @@
+@mixin ratings_stars {
+  div.ratings_container {
+    width: 95px;
+    height: 20px;
+
+    > div.ratings_btn {
+      height:20px;
+      position: relative;
+      top: -44px;
+      > span {
+        cursor: pointer ;
+        margin:0;
+        padding: 0 9px 0 10px;
+      }
+    }
+
+    > div.ratings {
+      background-image: url("/img/stars.png");
+      height: 20px;
+      background-position: 0 -120px;
+
+      &.ratings.rated {
+        background-position: 0 -58px;
+        position: relative;
+        top: -22px;
+        &.rated_none {
+          width: 0;
+        }
+        &.rated_1 {
+          width: 19px;
+        }
+        &.rated_2 {
+          width: 38px;
+        }
+        &.rated_3 {
+          width: 57px;
+        }
+        &.rated_4 {
+          width: 76px;
+        }
+        &.rated_5 {
+          width: 95px;
+        }
+      }
+    }
+  }
+}
+
+
 /* for popular movie and what to watch page  */
 @mixin movie_in_list {
   div.movie_in_list {
@@ -38,7 +87,6 @@
 
         @include single_transition(visibility,0,ease,0.25s);
 
-
         > div {
           width: 315px ;
           margin: 0 15px;
@@ -51,7 +99,7 @@
 
           > div.movie_title {
             background-color: $w2wt_blue ;
-            height: 45px ;
+            min-height: 40px ;
             h3 {
               padding: 7px 7px 0 7px;
               a {
@@ -79,6 +127,8 @@
               font-size: 13px ;
             }
           }
+
+          @include ratings_stars;
         }
       }
     }
@@ -87,17 +137,5 @@
 
 
 div.movie_page {
-  div.ratings {
-    > span {
-      cursor: pointer ;
-      margin: 5px;
-      padding: 2px;
-      display:inline-block;
-
-      &:hover, &.selected {
-        background-color: $w2wt_blue;
-        color: white;
-      }
-    }
-  }
+  @include ratings_stars
 }

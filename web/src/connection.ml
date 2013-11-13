@@ -8,13 +8,20 @@
   let set_session s = Eliom_reference.set session s
   let remove_session () = Eliom_reference.unset session
 
-  let get_uid () =
+  let get_uid_opt () =
     lwt s = get_session () in
     Lwt.return (
       Balsa_option.map (
         fun u -> u.User_request.uid
       ) s
     )
+
+  let get_uid () =
+    match_lwt get_uid_opt () with
+      | Some u_uid ->
+        Lwt.return u_uid
+      | None ->
+        raise Not_connected
 
   let check =
     server_function Json.t<unit> (

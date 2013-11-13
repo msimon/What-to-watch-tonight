@@ -6,26 +6,6 @@
         Movie_request.of_uid m_uid
     )
 
-  let rate =
-    server_function Json.t<Graph.Movie.key * int> (
-      fun (m_uid,rating) ->
-        match_lwt Connection.get_uid () with
-          | Some u_uid ->
-            Movie_request.rate m_uid u_uid rating
-          | None ->
-            raise Connection.Not_connected
-    )
-
-  let user_rating =
-    server_function Json.t<Graph.Movie.key> (
-      fun m_uid ->
-        match_lwt Connection.get_uid () with
-          | Some u_uid ->
-            Rating_request.get_rating_value Rating_request.Exception m_uid u_uid
-          | None ->
-            raise Connection.Not_connected
-    )
-
 }}
 
 {client{
@@ -39,26 +19,13 @@
   let dom s _ =
     let open Movie_request in
 
-    let rating,update_rating = S.create None in
-    let uid_of_service = function
+     let uid_of_service = function
       | Path.Movie uid -> uid
       | _ -> assert false
     in
 
     let m_uid = uid_of_service s in
     lwt m = %fetch_movie m_uid in
-
-    S.iter (
-      function
-        | Some _ ->
-          Lwt.async (
-            fun _ ->
-              lwt r = %user_rating m_uid in
-              update_rating (Some r);
-              Lwt.return_unit
-          );
-        | None -> ()
-    ) Connection.connected;
 
     let pict_dom =
       match m.Movie_request.poster_path with
@@ -78,37 +45,9 @@
           (p ~a:[a_style "display_none"] []) m.overview
       in
 
-      let rating_dom =
-        R.node (
-          S.map (
-            fun r ->
-              let onclick n =
-                a_onclick (
-                  fun _ ->
-                    update_rating (Some n);
-                    Lwt.async (fun _ -> %rate (m_uid,n));
-                    raise Eliom_lib.False
-                )
-              in
-              let selected n =
-                if r = Some n then [ "selected" ]
-                else []
-              in
-
-              div ~a:[ a_class ["ratings"]] [
-                span ~a:[ onclick 1; a_class (selected 1) ] [ pcdata "1" ];
-                span ~a:[ onclick 2; a_class (selected 2) ] [ pcdata "2" ];
-                span ~a:[ onclick 3; a_class (selected 3) ] [ pcdata "3" ];
-                span ~a:[ onclick 4; a_class (selected 4) ] [ pcdata "4" ];
-                span ~a:[ onclick 5; a_class (selected 5) ] [ pcdata "5" ];
-              ]
-          ) rating
-        )
-      in
-
       div [
         h1 [ pcdata m.title ];
-        rating_dom ;
+        Dom_gen.rating_dom m_uid ;
         div [
           div [
             span [
