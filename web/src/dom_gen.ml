@@ -65,7 +65,11 @@
           | Some ratings when (List.length ratings) < min_rate ->
             div ~a:[ a_class ["missing_cover"]] [
               div [
-                p [ pcdata (Printf.sprintf "A least %d more rating are required for suggestions" (min_rate - (List.length ratings))) ]
+                p [
+                  span [ pcdata "A least" ];
+                  span ~a:[ a_class ["number"]] [ pcdata (string_of_int (min_rate - (List.length ratings))) ];
+                  span [ pcdata "rating or more are required for suggestions" ]
+                ]
               ]
             ]
           | _ ->

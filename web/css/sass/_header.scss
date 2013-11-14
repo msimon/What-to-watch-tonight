@@ -186,6 +186,14 @@
     margin: 0px auto;
 
     > p {
+      span {
+        color: #6f8491;
+        &.number {
+          color: #008ece;
+          padding: 0 4px;
+        }
+      }
+
       text-align: center;
       margin: 0;
       font-family: "HelveticaNeue";
