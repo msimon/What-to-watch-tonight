@@ -7,10 +7,14 @@
       height:20px;
       position: relative;
       top: -44px;
-      > span {
+      > div {
         cursor: pointer ;
         margin:0;
-        padding: 0 9px 0 10px;
+        padding: 0;
+        width: 19px;
+        height: 18px;
+        float:left ;
+        border: 0;
       }
     }
 

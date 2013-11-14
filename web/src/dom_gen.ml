@@ -5,7 +5,11 @@
         lwt u_uid = Connection.get_uid () in
         lwt u = Db.User.find u_uid in
 
-        Lwt.return (List.length u.Graph.User.ratings);
+        if (List.length u.Graph.User.ratings < Balsa_config.get_int "minimum_rating_for_suggestion") then
+          lwt movies_uid = Rating_request.get_movies_uid u.Graph.User.ratings in
+          Lwt.return (Some (movies_uid))
+        else
+          Lwt.return None
     )
 
   let user_rating =
@@ -35,41 +39,36 @@
   (*** MISSING RATINGS INFO POPUP **)
 
   let missing_rating, missing_rating_u = Balsa_react.S.create None
-  let lower_missing_rating () =
+  let add_missing_rating m_uid =
     match S.value missing_rating with
-      | Some v when v = 1 ->
-        missing_rating_u None
-      | Some v ->
-        missing_rating_u (Some (v - 1));
+      | Some ratings ->
+        if not (List.mem m_uid ratings) then
+          missing_rating_u (Some (m_uid::ratings));
       | _ -> ()
-
-  let set_missing_rating rate_nb =
-    let min_rate = Balsa_config.get_int "minimum_rating_for_suggestion" in
-    if rate_nb < min_rate then
-      missing_rating_u (Some (min_rate - rate_nb))
 
   let _ =
     E.iter (
       fun _ ->
         Lwt.async (
           fun _ ->
-            lwt rate_nb = %rate_nb () in
-            set_missing_rating rate_nb;
+            lwt ratings = %rate_nb () in
+            missing_rating_u ratings ;
             Lwt.return_unit
         )
     ) (E.once Path.init_aux)
 
   let missing_rating_popup () =
+    let min_rate = Balsa_config.get_int "minimum_rating_for_suggestion" in
     R.node (
       S.map (
         function
-          | Some v ->
+          | Some ratings when (List.length ratings) < min_rate ->
             div ~a:[ a_class ["missing_cover"]] [
               div [
-                p [ pcdata (Printf.sprintf "A least %d more rating are required for suggestions" v) ]
+                p [ pcdata (Printf.sprintf "A least %d more rating are required for suggestions" (min_rate - (List.length ratings))) ]
               ]
             ]
-          | None ->
+          | _ ->
             div ~a:[ a_style "display:none" ] []
       ) missing_rating
     )
@@ -114,7 +113,7 @@
                   fun _ ->
                     update_rating (Some n);
                     Lwt.async (fun _ -> %rate (m_uid,n));
-                    lower_missing_rating () ;
+                    add_missing_rating m_uid ;
                     raise Eliom_lib.False
                 )
               in
@@ -130,11 +129,11 @@
                 div ~a:[ a_class ["ratings"; "rated"; (Printf.sprintf "rated_%s" (selected_class ())) ]] [
                 ];
                 div ~a:[ a_class ["ratings_btn"]; a_onmouseout (fun _ -> update_over_rating (S.value rating)) ] [
-                  span ~a:[ onclick 1; a_onmouseover (fun _ -> update_over_rating (Some 1)) ] [ pcdata " " ];
-                  span ~a:[ onclick 2; a_onmouseover (fun _ -> update_over_rating (Some 2)) ] [ pcdata " " ];
-                  span ~a:[ onclick 3; a_onmouseover (fun _ -> update_over_rating (Some 3)) ] [ pcdata " " ];
-                  span ~a:[ onclick 4; a_onmouseover (fun _ -> update_over_rating (Some 4)) ] [ pcdata " " ];
-                  span ~a:[ onclick 5; a_onmouseover (fun _ -> update_over_rating (Some 5)) ] [ pcdata " " ];
+                  div ~a:[ onclick 1; a_onmouseover (fun _ -> update_over_rating (Some 1)) ] [ pcdata " " ];
+                  div ~a:[ onclick 2; a_onmouseover (fun _ -> update_over_rating (Some 2)) ] [ pcdata " " ];
+                  div ~a:[ onclick 3; a_onmouseover (fun _ -> update_over_rating (Some 3)) ] [ pcdata " " ];
+                  div ~a:[ onclick 4; a_onmouseover (fun _ -> update_over_rating (Some 4)) ] [ pcdata " " ];
+                  div ~a:[ onclick 5; a_onmouseover (fun _ -> update_over_rating (Some 5)) ] [ pcdata " " ];
                 ]
               ]
             | None ->

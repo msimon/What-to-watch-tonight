@@ -49,13 +49,30 @@
           ]
         in
 
+        let over = ref None in
+        let cancel_over () =
+          match !over with
+            | Some o ->
+              Lwt.cancel o;
+            | None -> ()
+        in
         Balsa_dom.toggle_mouse_over movie_list_container (
           fun _ ->
-            Balsa_dom.display movie_prev ;
-            Balsa_dom.display movie_next ;
+            cancel_over ();
+            over := Some (
+                lwt _ = Lwt_js.sleep 0.100 in
+                Balsa_dom.display movie_prev ;
+                Balsa_dom.display movie_next ;
+                Lwt.return_unit
+              )
         ) (fun _ ->
-            Balsa_dom.hide movie_prev ;
-            Balsa_dom.hide movie_next ;
+            cancel_over ();
+            over := Some (
+                lwt _ = Lwt_js.sleep 0.100 in
+                Balsa_dom.hide movie_prev ;
+                Balsa_dom.hide movie_next ;
+                Lwt.return_unit
+              )
           );
 
         let slide_thread = ref Lwt.return_unit in

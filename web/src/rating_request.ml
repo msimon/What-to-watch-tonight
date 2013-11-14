@@ -36,3 +36,10 @@ let get_rating_value : type t. (int,t) opt -> Graph.Movie.key -> Graph.User.key 
           Lwt.return r.Graph.Rating.rating
     in
     t
+
+let get_movies_uid ratings =
+  Lwt_list.map_p (
+    fun rating ->
+      lwt r = Db.Rating.find rating in
+      Lwt.return r.Graph.Rating.movie_uid
+  ) ratings
