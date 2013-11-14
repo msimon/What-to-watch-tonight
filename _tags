@@ -1,7 +1,8 @@
-<web/src/server/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.server,eliom.syntax.server,deriving,deriving.syntax,lwt.syntax,mongo,mongo.lwt,json_ext.server,json_ext.server.syntax,bson,bson.syntax,balsa.server),use_graph_server
+<web/src/server/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.server,eliom.syntax.server,deriving,deriving.syntax,lwt.syntax,mongo,mongo.lwt,json_ext.server,json_ext.server.syntax,bson,bson.syntax,balsa.server),use_graph_server,use_learning
 <web/src/client/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.client,eliom.syntax.client,lwt.syntax,json_ext.client,json_ext.client.syntax,bson.client,bson.client.syntax,balsa.client),use_graph_client
+<web/src/server/*.cmx>: native
 
-<web/src/type_mli/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.server,eliom.syntax.type,lwt.syntax,deriving,deriving.syntax,mongo,mongo.lwt,json_ext.server,json_ext.server.syntax,bson,bson.syntax,balsa.server),use_graph_server
+<web/src/type_mli/*.{ml,mli}>: thread, syntax(camlp4o), package(eliom.server,eliom.syntax.type,lwt.syntax,deriving,deriving.syntax,mongo,mongo.lwt,json_ext.server,json_ext.server.syntax,bson,bson.syntax,balsa.server),use_graph_server,use_learning
 
 <web/w2wt_client.byte>: use_graph_client,package(balsa.client,bson.client,json_ext.client)
 

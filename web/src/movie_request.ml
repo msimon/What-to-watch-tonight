@@ -149,11 +149,30 @@ let rate : Graph.Movie.key -> Graph.User.key -> int -> unit Lwt.t =
       Lwt.return_unit
     in
 
-    Lwt.join [
-      update_movie ;
-      update_user ;
-      insert_rating ;
-    ]
+    lwt _ =
+      Lwt.join [
+        update_movie ;
+        update_user ;
+        insert_rating ;
+      ]
+    in
+
+    lwt u = Db.User.find u_uid in
+    let rating_nb = List.length u.Graph.User.ratings in
+    lwt _ =
+      if rating_nb = Balsa_config.get_int "minimum_rating_for_suggestion" then begin
+        Balsa_log.warning "Starting learning for user %d\n" (Graph.Uid.get_value u_uid);
+        let config = Config.web_to_tools () in
+        let (user_db,movie_db,genre_db,rating_db) = Db.as_value () in
+        lwt _ = Learning.Main.batch_user config genre_db movie_db user_db rating_db u_uid in
+        Balsa_log.warning "Finished learning for user %d\n" (Graph.Uid.get_value u_uid);
+        Lwt.return_unit
+      end else
+        Lwt.return_unit
+    in
+
+    Lwt.return_unit
+
 
 let search prefix =
   (* read http://docs.mongodb.org/manual/reference/operator/regex/ before changing regexp.
@@ -179,7 +198,7 @@ let search prefix =
 
 
 let what_to_watch u_uid_opt =
-  let _suggestion () = ()in
+  let _suggestion () = () in
 
   let movie_genre () =
     let rec build_paralel_query acc =

@@ -10,7 +10,7 @@ EXEC = $(TOOLS_PATH)moviedb_wrapper.native $(TOOLS_PATH)moviedb_to_w2wt.native $
 all: lib tools_in web
 
 web:
-	@ocamlbuild ./web/w2wt.otarget
+	@ocamlbuild -I tools/lib/config ./web/w2wt.otarget
 	@cp ./_build/web/w2wt.js $(WEB_PUBLIC_PATH)
 
 tools_in:
@@ -42,3 +42,6 @@ clean:
 
 clean-exec:
 	@rm -rf _build/tools/exec
+
+clean-web:
+	@rm -rf _build/web

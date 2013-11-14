@@ -19,7 +19,7 @@ let init_vector =
        | v -> v)
 
 
-let load_users_params config user_db user_htbl genre_htbl =
+let load_users_params user_db user_htbl genre_htbl =
   let open Graph.User in
   let module User_db = (val user_db : Graph_server.Db.Sig with type t = Graph_server.User.t and type key = Graph_server.User.key) in
 
@@ -42,7 +42,7 @@ let load_users_params config user_db user_htbl genre_htbl =
   Lwt.return ()
 
 
-let load_movies_params config movie_db movie_htbl genre_htbl =
+let load_movies_params movie_db movie_htbl genre_htbl =
   let open Graph.Movie in
   let module Movie_db = (val movie_db : Graph_server.Db.Sig with type t = Graph_server.Movie.t and type key = Graph_server.Movie.key) in
 
@@ -61,7 +61,7 @@ let load_movies_params config movie_db movie_htbl genre_htbl =
 
   Lwt.return ()
 
-let load_ratings_params config rating_db rating_htbl u_rating_htbl m_rating_htbl user_htbl movie_htbl =
+let load_ratings_params rating_db rating_htbl u_rating_htbl m_rating_htbl user_htbl movie_htbl =
   let open Graph.Rating in
   let module Rating_db = (val rating_db : Graph_server.Db.Sig with type t = Graph_server.Rating.t and type key = Graph_server.Rating.key) in
 
@@ -91,7 +91,7 @@ let load_ratings_params config rating_db rating_htbl u_rating_htbl m_rating_htbl
   Lwt.return ()
 
 
-let load_genres_params config genre_db genre_htbl =
+let load_genres_params genre_db genre_htbl =
   let module Genre_db = (val genre_db : Graph_server.Db.Sig with type t = Graph_server.Genre.t and type key = Graph_server.Genre.key) in
   lwt genres = Genre_db.query_no_cache ~full:true Bson.empty in
 
@@ -352,16 +352,15 @@ let batch config user_db movie_db genre_db rating_db =
   in
 
   let do_ () =
-    let database_config = config.w2wt_db in
     (* genre must be load before since we can use it to setup inital vector *)
-    lwt _ = load_genres_params database_config genre_db genre_htbl in
+    lwt _ = load_genres_params genre_db genre_htbl in
     lwt _ = Lwt.join [
-        load_movies_params database_config movie_db movie_htbl genre_htbl ;
-        load_users_params database_config user_db user_htbl genre_htbl ;
+        load_movies_params movie_db movie_htbl genre_htbl ;
+        load_users_params user_db user_htbl genre_htbl ;
       ]
     in
 
-    lwt _ = load_ratings_params database_config rating_db rating_htbl u_rating_htbl m_rating_htbl user_htbl movie_htbl in
+    lwt _ = load_ratings_params rating_db rating_htbl u_rating_htbl m_rating_htbl user_htbl movie_htbl in
 
     gradient_descent ();
 
@@ -501,9 +500,8 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
     iter config.learning.alpha c 100 user
   in
 
-  let database_config = config.w2wt_db in
-  lwt _ = load_genres_params database_config genre_db genre_htbl in
-  lwt _ = load_movies_params database_config movie_db movie_htbl genre_htbl in
+  lwt _ = load_genres_params genre_db genre_htbl in
+  lwt _ = load_movies_params movie_db movie_htbl genre_htbl in
   lwt user = User_db.find user_uid in
 
   lwt user = gradient_descent user in

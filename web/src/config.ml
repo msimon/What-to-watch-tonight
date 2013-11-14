@@ -76,6 +76,33 @@ let db_port = Balsa_config.get_int "w2wt_db.port"
 let db_name = Balsa_config.get_string "w2wt_db.name"
 let query_cache_lifetime = Balsa_config.get_float "db.query_cache_lifetime"
 
+let web_to_tools () =
+  let database = {
+    Config_t.ip = "" ;
+    name = "" ;
+    collection = "" ;
+    port = 0;
+  } in
+
+  let learning = {
+    Config_t.alpha = Balsa_config.get_float "learning.alpha" ;
+    lambda = Balsa_config.get_float "learning.lambda" ;
+  } in
+
+  {
+    Config_t.api_url = "" ;
+    mock_api = "";
+    api_key = "" ;
+    max_connections = 0 ;
+    request_per_second = 0 ;
+    api_db = database ;
+    w2wt_db = database ;
+    movie_loop_time = 0.;
+    sleep_time = 0.;
+    learning = learning;
+    minimal_vote_count = Balsa_config.get_int "minimum_rating_for_suggestion";
+  }
+
 
 {client{
 

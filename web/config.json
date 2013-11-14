@@ -32,6 +32,9 @@
   "movie_list.single_movie_width" : 225,
   "movie_list.min_movie_per_page" : 4,
 
+  "learning.alpha" : 0.05,
+  "learning.lambda" : 1.5,
+
   "export-to-client" : [
     "default_movie_img",
     "fb.app-id",
