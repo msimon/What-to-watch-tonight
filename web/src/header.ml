@@ -101,6 +101,7 @@
         Path.a ~service:Path.main_service [
           pcdata "W2WT"
         ];
+        span ~a:[ a_class ["alpha"]] [ pcdata "alpha" ];
         span ~a:[ a_class ["vertical_sep"]] []
       ];
       div ~a:[ a_class ["section"]] [

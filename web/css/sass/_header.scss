@@ -7,7 +7,7 @@
 
   @media (min-width: #{$min_width}px) {
     position: fixed;
-    z-index: 100;
+    z-index: 101;
     left: #{$full_container_padding}px;
     right: #{$full_container_padding}px;
   }
@@ -20,13 +20,23 @@
 
     &.logo {
       width: 137px;
-      a {
+      > a {
         font-family: $logo_font ;
         font-size: 31px;
         color: white ;
         padding: 0 20px;
         position: relative;
         top: 4px;
+      }
+      > span.alpha {
+        position: absolute;
+        top: 40px;
+        left: 70px;
+        @include rotate(-20deg);
+        color: white;
+        background-color: black;
+        padding: 0 5px;
+        font-size: 13px;
       }
     }
 
