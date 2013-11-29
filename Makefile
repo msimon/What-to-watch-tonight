@@ -3,7 +3,7 @@
 TOOLS_BUILD_PATH = ./_build/tools/exec/
 TOOLS_PATH = ./tools/
 
-WEB_PUBLIC_PATH = ./web/public
+WEB_PUBLIC_PATH = ./web/public/
 
 EXEC = $(TOOLS_PATH)moviedb_wrapper.native $(TOOLS_PATH)moviedb_to_w2wt.native $(TOOLS_PATH)learn.native $(TOOLS_PATH)all.native $(WEB_PUBLIC_PATH)/w2wt.js
 
@@ -11,9 +11,9 @@ all: lib tools_in web
 
 web:
 	@ocamlbuild -I tools/lib/config ./web/w2wt.otarget
-	@cp ./_build/web/w2wt.js $(WEB_PUBLIC_PATH)
+	@cp ./_build/web/w2wt_client.js $(WEB_PUBLIC_PATH)/w2wt.js
 
-tools_in:
+tools_in: lib
 	@ocamlbuild -I tools/lib/config ./tools/lib/tools.otarget
 	@ocamlbuild -I tools/exec/config -I tools/lib/config ./tools/exec/tools.otarget
 	@cp $(TOOLS_BUILD_PATH)moviedb/moviedb_wrapper.native $(TOOLS_PATH)moviedb_wrapper.native

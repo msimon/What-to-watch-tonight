@@ -1,7 +1,6 @@
 src/graph
 
 src/config
-src/uid
 src/db
 
 src/db_request
@@ -10,7 +9,7 @@ src/genre_request
 src/user_request
 src/rating_request
 
-src/main
+src/main_server
 src/service
 
 src/main_client

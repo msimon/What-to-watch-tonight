@@ -1,2 +1,3 @@
 w2wt_server.cma
-w2wt.js
+w2wt_server.cmxs
+w2wt_client.js

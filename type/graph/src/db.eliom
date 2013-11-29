@@ -212,7 +212,6 @@ struct
 
 
   (* insert/update/delete must wait for the db to be ready (Uid.uid need to be set first) *)
-
   let insert t =
     lwt _ = ready in
     lwt mongo = mongo in

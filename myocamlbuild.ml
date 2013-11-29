@@ -48,188 +48,189 @@ let _ =
   in
   List.iter derive_file_list [ "mlpack"; "mllib" ]
 
-let copy_with_header src prod =
-  let dir = Filename.dirname prod in
-  let mkdir = Cmd (Sh ("mkdir -p " ^ dir)) in
-  let contents = Pathname.read src in
-  let header = "# 1 \""^src^"\"\n" in
-  (* Printf.printf "copy %s -> %s\n" src prod; *)
-  Seq [mkdir;Echo ([header;contents],prod)]
 
-let copy_rule_with_header ?(deps=[]) name src prod =
-  rule name ~deps:(src::deps) ~prod
-    (fun env _ ->
-       let prod = env prod in
-       let src = env src in
-       copy_with_header src prod)
+module Ocamlbuild_eliom (
+    Client :
+    sig
+      val client_exec : string option
+      val dispatch_default : Ocamlbuild_plugin.hook -> unit
+      val server_dir : string
+      val type_dir : string
+      val client_dir : string
+    end) = struct
 
+  open Ocamlbuild_plugin
+  module Pack = Ocamlbuild_pack
 
-(**** .TYPE_MLI ****)
+  let copy_with_header src prod =
+    let contents = Pathname.read src in
+    let header = "# 1 \"" ^ src ^ "\"\n" in
+    Pack.Shell.mkdir_p (Filename.dirname prod);
+    Echo ([header; contents], prod)
 
-let infer_interface ml type_mli env build =
-  let ml = env ml and mli = env type_mli in
-  let tags = tags_of_pathname ml++"ocaml" in
-  Ocamlbuild_pack.Ocaml_compiler.prepare_compile build ml;
-  Cmd(S[!Options.ocamlc; Ocamlbuild_pack.Ocaml_utils.ocaml_ppflags tags; Ocamlbuild_pack.Ocaml_utils.ocaml_include_flags ml; A"-i";
-        T(tags++"infer_interface"); P ml; Sh ">"; Px mli])
+  let copy_rule_with_header f name ?(deps=[]) src prod =
+    rule name ~deps:(src :: deps) ~prod
+      (fun env _ ->
+         let prod = env prod in
+         let src = env src in
+         f env (Pathname.dirname prod) (Pathname.basename prod) prod;
+         copy_with_header src prod
+      )
 
-let derive_infer_interface =
-  rule ("derive infer_interface: type_mli")
-    ~deps:["%(path)/%(name).ml"]
-    ~prod:("%(path)/type_mli/%(name: <*> and not <*.*>).type_mli")
-    (fun env build ->
-      ignore(build [[env ("%(path)/type_mli/%(name).ml.depends")]]);
-      Seq [
-        Cmd(S[Sh "mkdir"; P "-p"; P (env "%(path)/type_mli") ]);
-	      infer_interface
-	        (* (env ("%(path)/type_mli/%(name).ml")) (\* We find the type from the original file *\) *)
-	        (env ("%(path)/type_mli/%(name).ml")) (* We take the env from the server *)
-	        (env ("%(path)/type_mli/%(name).type_mli"))
-	        env
- 	        build
+  let flag_infer file type_inferred =
+    let file_tag = "file:" ^ file in
+    let tags =
+      [["ocaml"; "ocamldep"; file_tag];
+       ["ocaml"; "compile"; file_tag];
+       ["ocaml"; "infer_interface"; file_tag];
       ]
-    )
+    in
+    let f tags =
+      flag tags (S [A "-ppopt"; A "-type"; A "-ppopt"; P type_inferred])
+    in
+    List.iter f tags;
+    flag ["ocaml"; "doc"; file_tag] (S [A "-ppopt"; A "-notype"])
 
-(* camlp4 special cmd *)
+  let copy_rule_server =
+    copy_rule_with_header
+      (fun env dir name file ->
+         let path = env "%(path)" in
+         let type_inferred =
+           Pathname.concat
+             (Pathname.concat path Client.type_dir)
+             (Pathname.update_extension "inferred.mli" name)
+         in
+         tag_file file
+           [ "pkg_eliom.server"; "pkg_eliom.syntax.server"; "thread";
+             "syntax_camlp4o";
+           ];
+         flag_infer file type_inferred;
+         Pathname.define_context dir [path];
+         Pathname.define_context path [dir];
+      )
 
-let add_camlp4_pkg pkg =
-  let s = Printf.sprintf "ocamlfind query -predicates preprocessor,syntax -r -format \"-I %%d %%A\" %s" (String.concat " " pkg) in
-  let p = Ocamlbuild_pack.My_unix.run_and_read s in
-  List.map (function
-    | "" -> N
-    | x -> A x ) (List.rev (List.flatten (List.map (fun s -> split s ' ') (split_nl p))))
+  let copy_rule_client =
+    copy_rule_with_header
+      (fun env dir name file ->
+         let path = env "%(path)" in
+         let type_inferred =
+           Pathname.concat
+             (Pathname.concat path Client.type_dir)
+             (Pathname.update_extension "inferred.mli" name)
+         in
+         tag_file file
+           [ "pkg_eliom.client"; "pkg_eliom.syntax.client"; "thread";
+             "syntax_camlp4o";
+           ];
+         flag_infer file type_inferred;
+         Pathname.define_context dir [path];
+      )
 
-let camlp4 ?(default=A"camlp4o") ?tag i o env build =
-  let ml = env i in
-  let tags = tags_of_pathname ml++"ocaml"++"camlp4o"++"compile"++"byte" in
-  let tags = match tag with
-    |  None -> tags
-    | Some t -> tags++(env t) in
-  let _ = Ocamlbuild_pack.Rule.build_deps_of_tags build tags in
-  let pp = Command.reduce (Ocamlbuild_pack.Flags.of_tags tags) in
-  let pp =
-    let rec aux acc inc pkg l =
-      match l with
-        | [] -> (List.rev (add_camlp4_pkg pkg)) @ (List.rev inc) @(List.rev acc)
-        | (A"-ppopt")::x::xs -> aux (x::acc) inc pkg xs
-        | (A"-I")::x::xs -> aux acc inc pkg xs
-        | (A"-package")::(A x)::xs -> (aux acc inc ((split x ',')@pkg) xs)
-        (*   | (A x)::xs when String.length x > 3 && String.sub x 0 3 = "pa_" -> aux ((A x)::acc) inc pkg xs *)
-        | _::xs -> aux acc inc pkg xs
-    in match pp with
-      | S xs -> S (aux [] [] [] xs)
-      | x -> x
-  in
-  let output =
-    match o with
-      | Some x ->
-        let pp_ml = env x in
-        [ A"-o"; Px pp_ml]
-      | None -> []
-  in
-  Cmd(S( default :: pp :: (P ml):: (A"-printer"):: (A"o") :: output));;
+  let copy_rule_type =
+    copy_rule_with_header
+      (fun env dir name file ->
+         let path = env "%(path)" in
+         let server_dir = Pathname.concat path Client.server_dir in
+         (* let server_file = Pathname.concat server_dir name in *)
+         tag_file file
+           ( "pkg_eliom.syntax.type" :: "thread" :: "syntax_camlp4o" :: []
+           );
+         Pathname.define_context dir [path; server_dir];
+      )
 
+  let js_rule () =
+    let linker tags deps out =
+      Cmd (S [A "js_of_eliom"; T tags;
+              Command.atomize_paths deps; A "-o"; Px out])
+    in
+    rule "js_of_eliom: .cmo -> .js" ~dep:"%.cmo" ~prod:"%.js"
+      (fun env ->
+         Pack.Ocaml_compiler.link_gen
+           "cmo" "cma" "cma" ["cmo"; "cmi"] linker
+           (fun tags ->
+              Tags.union
+                (tags_of_pathname (env "%.ml"))
+                (tags++"ocaml"++"link"++"byte"++"jslink"++"js_of_eliom")
+           )
+           "%.cmo" "%.js"
+           env
+      )
 
-let _ =
-  rule "mypreprocess: ml -> pp.ml"
-    ~dep:"%.ml"
-    ~prod:"%.pp.ml"
-    ~insert:`top
-    (camlp4 "%.ml" (Some"%.pp.ml"));
+  let add_to_targets () =
+    match Client.client_exec with
+      | None -> ()
+      | Some x -> Options.targets @:= [x]
 
-  rule "mypreprocess: ml -> pp.ml.o"
-    ~dep:"%.ml"
-    ~prod:"%.pp.ml.o"
-    ~insert:`top
-    (camlp4 "%.ml" None)
+  let dispatch_default hook =
+    Client.dispatch_default hook;
+    match hook with
+      | After_options ->
+        add_to_targets ();
+      | After_rules ->
+        js_rule ();
 
+        (* copy_rule_server "*.ml -> **/_server/*.ml" *)
+        (*   ~deps:["%(path)/" ^ Client.type_dir ^ "/%(file).inferred.mli"] *)
+        (*   "%(path)/%(name).ml" *)
+        (*   ("%(path)/" ^ Client.server_dir ^ "/%(file:<*>).ml"); *)
 
-(**** JS COMPILATION ****)
-let _ =
-  let get_js pkg =
-    Pathname.concat
-      (Ocamlbuild_pack.Findlib.query pkg).Ocamlbuild_pack.Findlib.location
-  in
-  let eliom_client_js =
-    get_js "eliom.client" "eliom_client.js"
-  in
-  let weak_js =
-    get_js "js_of_ocaml" "weak.js"
-  in
-  let pkgs =
-    P eliom_client_js :: if Pathname.exists weak_js then [P weak_js] else []
-  in
+        (* copy_rule_server "*.ml -> **/_client/*.ml" *)
+        (*   ~deps:["%(path)/" ^ Client.type_dir ^ "/%(file).inferred.mli"] *)
+        (*   "%(path)/%(name).ml" *)
+        (*   ("%(path)/" ^ Client.server_dir ^ "/%(file:<*>).ml"); *)
 
+        (* copy_rule_server "*.ml -> **/_server/*.ml" *)
+        (*   ~deps:["%(path)/" ^ Client.type_dir ^ "/%(file).inferred.mli"] *)
+        (*   "%(path)/%(name).ml" *)
+        (*   ("%(path)/" ^ Client.server_dir ^ "/%(file:<*>).ml"); *)
 
-  rule "js_of_ocaml"
-    ~deps:["%_client.byte";"web/public/js_dummy.js"]
-    ~prod:"%.js"
-    (fun env _ ->
-       let tags=tags_of_pathname (env "%.js") ++ "ocaml"++"compile"++"js" in
-	     Cmd (S ([A "js_of_ocaml"; T tags; P (env "%_client.byte") ] @ pkgs @ [ A"-o"; P(env"%.js")]))
-    )
+        (* copy_rule_with_header "*.ml -> **/client/*.ml" "%(path)/%(name).ml" "%(path)/client/%(name:<*>).ml" ; *)
+        (* copy_rule_with_header "*.ml -> **/type_mli/*.ml" "%(path)/%(name).ml" "%(path)/type_mli/%(name:<*>).ml" ; *)
 
-(* client/server compilation*)
+        copy_rule_server "*.eliom -> **/_server/*.ml"
+          ~deps:["%(path)/" ^ Client.type_dir ^ "/%(file).inferred.mli"]
+          "%(path)/%(file).eliom"
+          ("%(path)/" ^ Client.server_dir ^ "/%(file:<*>).ml");
+        copy_rule_server "*.eliomi -> **/_server/*.mli"
+          "%(path)/%(file).eliomi"
+          ("%(path)/" ^ Client.server_dir ^ "/%(file:<*>).mli");
+        copy_rule_type "*.eliom -> **/_type/*.ml"
+          "%(path)/%(file).eliom"
+          ("%(path)/" ^ Client.type_dir ^ "/%(file:<*>).ml");
+        copy_rule_type "*.eliomi -> **/_type/*.mli"
+          "%(path)/%(file).eliomi"
+          ("%(path)/" ^ Client.type_dir ^ "/%(file:<*>).mli");
+        copy_rule_client "*.eliom -> **/_client/*.ml"
+          ~deps:["%(path)/" ^ Client.type_dir ^ "/%(file).inferred.mli"]
+          "%(path)/%(file).eliom"
+          ("%(path)/" ^ Client.client_dir ^ "/%(file:<*>).ml");
+        copy_rule_client "*.eliomi -> **/_client/*.mli"
+          "%(path)/%(file).eliomi"
+          ("%(path)/" ^ Client.client_dir ^ "/%(file:<*>).mli");
 
-let type_mli_cmd env filename =
-  [ A"-ppopt"; A"-type"; A"-ppopt"; P (env "%(path)/type_mli/"^filename-.-"type_mli") ]
-
-let compilation ml env build =
-  let ml = env ml in
-  let filename = try Filename.basename (Filename.chop_extension ml) with _ -> ml in
-  let tags = (tags_of_pathname ml)++"ocaml"++"byte" in
-
-  ignore (build [[ (env "%(path)/type_mli/"^filename-.-"type_mli") ]]);
-  ignore (build [[ml-.-"depends"]]);
-
-  let cmo = Pathname.update_extensions "cmo" ml in
-  Ocamlbuild_pack.Ocaml_compiler.prepare_compile build ml;
-
-  Cmd (S ([!Options.ocamlc; A"-c"; T(tags++"compile");
-           Ocamlbuild_pack.Ocaml_utils.ocaml_ppflags tags;
-	         Ocamlbuild_pack.Ocaml_utils.ocaml_include_flags ml]
-	        @ (type_mli_cmd env filename)
-	        @ [A"-o"; Px cmo; P ml]))
-
-let _ =
-  rule "ocaml server modified: ml -> cmo & cmi"
-    ~deps:["%(path)/%(suffix)/%(file).ml"]
-    ~prods:["%(path:<web/*>)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).cmo";
-            "%(path:<web/*>)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).cmi"]
-    (fun env build -> compilation ((env "%(path)/")^ (env "%(suffix)") ^ "/%(file).ml") env build)
-
-(* Deps *)
-let ocaml_depend ml env build =
-  let ml = env ml in
-  let filename = try Filename.basename (Filename.chop_extension ml) with _ -> ml in
-  let tags = (tags_of_pathname ml) in
-
-  ignore (build [[ (env "%(path)/type_mli/"^filename-.-"type_mli") ]]);
-
-  let ml_depends = Pathname.update_extensions "ml.depends" ml in
-
-  Cmd(S([S [!Options.ocamldep; T (tags++"ocaml"++"ocamldep"); Ocamlbuild_pack.Ocaml_utils.ocaml_ppflags (tags++"pp:dep"); A "-modules"]; P ml]
-	      @ (type_mli_cmd env filename)
-	      @ [Sh ">"; Px ml_depends]))
-
-let _ =
-  rule "ocaml server modified:  ml -. depends"
-    ~dep:"%(path)/%(suffix)/%(file).ml"
-    ~prod:"%(path:<web/*>)/%(suffix:<*> and not <*_*>)/%(file:<*> and not <*/*>).ml.depends"
-    (fun env build -> ocaml_depend ((env "%(path)/%(suffix)") ^"/%(file).ml") env build)
+        copy_rule_server "*.eliom -> _server/*.ml"
+          ~deps:[Client.type_dir ^ "/%(file).inferred.mli"]
+          "%(file).eliom" (Client.server_dir ^ "/%(file:<*>).ml");
+        copy_rule_server "*.eliomi -> _server/*.mli"
+          "%(file).eliomi" (Client.server_dir ^ "/%(file:<*>).mli");
+        copy_rule_type "*.eliom -> _type/*.ml"
+          "%(file).eliom" (Client.type_dir ^ "/%(file:<*>).ml");
+        copy_rule_type "*.eliomi -> _type/*.mli"
+          "%(file).eliomi" (Client.type_dir ^ "/%(file:<*>).mli");
+        copy_rule_client "*.eliom -> _client/*.ml"
+          ~deps:[Client.type_dir ^ "/%(file).inferred.mli"]
+          "%(file).eliom" (Client.client_dir ^ "/%(file:<*>).ml");
+        copy_rule_client "*.eliomi -> _client/*.mli"
+          "%(file).eliomi" (Client.client_dir ^ "/%(file:<*>).mli");
+      | _ -> ()
+end;;
 
 let _ = Options.use_ocamlfind := true
 let _ = Options.make_links := false
 
-let _ =
-  dispatch begin function
-    | Before_rules ->
-      copy_rule "mlpack to mllib" "web/w2wt_server.mlpack" "web/w2wt_server.mllib"
+let dispatch_default =
+  function
     | After_rules ->
-      copy_rule_with_header "*.ml -> **/server/*.ml" "%(path)/%(name).ml" "%(path)/server/%(name:<*>).ml" ;
-      copy_rule_with_header "*.ml -> **/client/*.ml" "%(path)/%(name).ml" "%(path)/client/%(name:<*>).ml" ;
-      copy_rule_with_header "*.ml -> **/type_mli/*.ml" "%(path)/%(name).ml" "%(path)/type_mli/%(name:<*>).ml" ;
-
       ocaml_lib ~extern:true ~dir:"./type/graph" "./type/graph/graph_server" ;
       ocaml_lib ~extern:true ~dir:"./type/graph" "./type/graph/graph_client" ;
       ocaml_lib ~extern:true ~dir:"./type/api" "./type/api/api" ;
@@ -237,10 +238,15 @@ let _ =
       ocaml_lib ~extern:true ~dir:"./tools/lib/moviedb" "./tools/lib/moviedb/moviedb" ;
       ocaml_lib ~extern:true ~dir:"./tools/lib/convert" "./tools/lib/convert/convert" ;
       ocaml_lib ~extern:true ~dir:"./tools/lib/learning" "./tools/lib/learning/learning" ;
-
-      flag [ "ocaml"; "infer_interface"; "thread" ] (S [ A "-thread" ]);
-      (* flag [ "js_compile"] (S [S [ A "-package" ; A "json_ext.client"]; S [ A "-package" ; A "bson.client"]; S [ A "-package" ; A "balsa.client"] ]; ); *)
-      ()
-
     | _ -> ()
-  end
+
+
+module M = Ocamlbuild_eliom(struct
+    let client_exec = None
+    let dispatch_default = dispatch_default
+    let client_dir = "client"
+    let server_dir = "server"
+    let type_dir = "type_mli"
+  end);;
+
+Ocamlbuild_plugin.dispatch M.dispatch_default;;

@@ -1,3 +1,4 @@
+graph_server.cmxs
+graph_server.cmxa
 graph_server.cma
 graph_client.cma
-graph_server.cmxa
