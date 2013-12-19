@@ -127,7 +127,7 @@
                   | None -> "none"
               in
 
-              div ~a:[ a_class ["ratings_container"]] [
+              div ~a:[ a_class ["ratings_container"]; a_onmouseout (fun _ -> update_over_rating (S.value rating)) ] [
                 div ~a:[ a_class ["ratings" ]] [
                 ];
                 div ~a:[ a_class ["ratings"; "rated"; (Printf.sprintf "rated_%s" (selected_class ())) ]] [

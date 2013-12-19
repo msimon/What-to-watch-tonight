@@ -466,6 +466,7 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
     let rec iter alpha prev_c n (user : Graph.User.t) : Graph.User.t Lwt.t =
       if n = 0 then Lwt.return user
       else begin
+        Balsa_log.debug "loop nb: %d" n;
         lwt new_user = user_grad user in
 
         (* if cost function is lower, we replace the vector and make the step 5% higher
