@@ -34,12 +34,29 @@
     let width_stl,update_width_stl = S.create "100%" in
 
     let movies_dom = div ~a:[ R.a_style width_stl; a_class ["movie_list_in"]] [] in
+
+    let set_last_class () =
+      let w = Manip.Attr.offsetWidth movies_dom in
+      let nb_display = w / (Lazy.force single_movie_width) in
+
+      let i = ref 0 in
+      Balsa_dom.iter_on_children (
+        fun el ->
+          let el = Html5.Of_dom.of_element el in
+          (* add the 'last' class to the last 2 movie on the line *)
+          if (nb_display - (!i mod nb_display) - 1) < 2 then Html5.Manip.Class.add el "last"
+          else Html5.Manip.Class.remove el "last";
+          incr(i);
+      ) movies_dom;
+    in
+
     E.iter (
       fun l ->
         List.iter (
           fun el ->
             Manip.appendChild movies_dom el
-        ) l
+        ) l;
+        set_last_class ();
     ) movie_list_ev;
 
     (* we are listening on update_movie_list to be sure the movie list is load *)
@@ -62,14 +79,7 @@
               else
                 update_width_stl (Printf.sprintf "width:%dpx" movies_width);
 
-              let i = ref 0 in
-              Balsa_dom.iter_on_children (
-                fun el ->
-                  let el = Html5.Of_dom.of_element el in
-                  if (nb_display - (!i mod nb_display) - 1) < 2 then Html5.Manip.Class.add el "last"
-                  else Html5.Manip.Class.remove el "last";
-                  incr(i);
-              ) movies_dom;
+              set_last_class ();
           ) Balsa_dom.window_size
         in
 
