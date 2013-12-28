@@ -20,6 +20,7 @@ tools_in: lib
 	@cp $(TOOLS_BUILD_PATH)convert/moviedb_to_w2wt.native $(TOOLS_PATH)moviedb_to_w2wt.native
 	@cp $(TOOLS_BUILD_PATH)learning/learn.native $(TOOLS_PATH)learn.native
 	@cp $(TOOLS_BUILD_PATH)all/all.native $(TOOLS_PATH)all.native
+	@cp $(TOOLS_BUILD_PATH)populate/populate.native $(TOOLS_PATH)populate.native
 
 tools: clean-exec tools_in
 

@@ -9,10 +9,12 @@
 <lib/learning/src/*.cmx> : for-pack(Learning)
 
 
-<exec/all/*> or <exec/moviedb/*> or <exec/convert/*> or <exec/learning/*>: thread, syntax(camlp4o), package(ocsigenserver,eliom,eliom.server,eliom.syntax.server,deriving,deriving.syntax,lwt,lwt.syntax,yojson,json_ext.server,json_ext.server.syntax,bson,bson.syntax,mongo,mongo.lwt,pcre,balsa.server,ocsigenserver,ocsigenserver.baselib,ocsigenserver.ext.ocsipersist-sqlite,bson)
+<exec/all/*> or <exec/moviedb/*> or <exec/convert/*> or <exec/learning/*> or <exec/populate/*>: thread, syntax(camlp4o), package(ocsigenserver,eliom,eliom.server,eliom.syntax.server,deriving,deriving.syntax,lwt,lwt.syntax,yojson,json_ext.server,json_ext.server.syntax,bson,bson.syntax,mongo,mongo.lwt,pcre,balsa.server,ocsigenserver,ocsigenserver.baselib,ocsigenserver.ext.ocsipersist-sqlite,bson)
 <exec/moviedb/*>: use_moviedb,use_api
 <exec/convert/*>: use_convert,use_api,use_graph_server
 <exec/learning/*>: use_learning,use_graph_server
 <exec/all/*>: use_graph_server, use_api, use_moviedb, use_convert, use_learning
+
+<exec/populate/*>: use_graph_server
 
 <exec/config/*.{ml,mli}>: thread, syntax(camlp4o), package(deriving,deriving.syntax,yojson,json_ext.server,json_ext.server.syntax,balsa.server),use_graph_server

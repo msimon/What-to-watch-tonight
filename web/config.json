@@ -28,6 +28,7 @@
   "min_nb_movie_by_genre": 10,
 
   "default_movie_img": "/img/default_movie_img.jpeg",
+  "default_profile_img": "/img/default_movie_img.jpeg",
 
   "movie_list.single_movie_width" : 225,
   "movie_list.min_movie_per_page" : 4,
@@ -41,6 +42,7 @@
 
   "export-to-client" : [
     "default_movie_img",
+    "default_profile_img",
     "fb.app-id",
     "facebook.perms",
     "movie_list.single_movie_width",
