@@ -1,7 +1,7 @@
 open Eliom_content
 open Html5.F
 
-module Dom_type =
+module W2wt =
   Eliom_registration.App (struct
     let application_name = "w2wt"
   end)
@@ -38,9 +38,9 @@ let main _ _ =
 
 
 let _ =
-  Dom_type.register Service.main main;
-  Dom_type.register Service.movie main;
-  Dom_type.register Service.profile main;
-  Dom_type.register Service.what_to_watch main;
-  Dom_type.register Service.taste_profile main;
-  Dom_type.register Service.popular_movie main
+  W2wt.register Service.main main;
+  W2wt.register Service.movie main;
+  W2wt.register Service.profile main;
+  W2wt.register Service.what_to_watch main;
+  W2wt.register Service.taste_profile main;
+  W2wt.register Service.popular_movie main

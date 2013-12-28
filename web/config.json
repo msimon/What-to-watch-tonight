@@ -23,7 +23,7 @@
   "fb.app-secret": "d3a15623f5e89145efad70b36238bc3d",
   "facebook.perms" : "email",
 
-  "minimum_rating_for_suggestion" : 25,
+  "minimum_rating_for_suggestion" : 2,
   "nb_movie_by_genre" : 13,
   "min_nb_movie_by_genre": 10,
 
@@ -35,12 +35,18 @@
   "learning.alpha" : 0.05,
   "learning.lambda" : 1.5,
 
+  "allow_default_moviedb_config": true,
+
+  "debug_mode": true,
+
   "export-to-client" : [
     "default_movie_img",
     "fb.app-id",
     "facebook.perms",
     "movie_list.single_movie_width",
     "movie_list.min_movie_per_page",
-    "minimum_rating_for_suggestion"
+    "minimum_rating_for_suggestion",
+    "allow_default_moviedb_config",
+    "debug_mode"
   ]
 }

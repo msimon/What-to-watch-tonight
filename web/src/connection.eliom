@@ -66,6 +66,15 @@
        Lwt.return u
     )
 
+  let debug_sign_in =
+    server_function Json.t<unit> (
+      fun _ ->
+        lwt u = Db.User.find (Graph.Uid.unsafe 2) in
+        lwt u = (User_request.to_client u) in
+        lwt _ = set_session (Some u) in
+        Lwt.return u
+    )
+
   let sign_out =
     server_function Json.t<unit> (
       fun _ ->
@@ -96,16 +105,25 @@
         Lwt.return_unit
 
   let facebook_connect () =
-    match_lwt Balsa_facebook.login ~perms:(Balsa_config.get_string "facebook.perms") with
-      | Some s ->
-        let fb_id =  Js.to_string s##userID in
-        let access_token = Js.to_string s##accessToken in
-        lwt u = %facebook_sign_in (fb_id,access_token) in
+    try_lwt begin
+      match_lwt Balsa_facebook.login ~perms:(Balsa_config.get_string "facebook.perms") with
+        | Some s ->
+          let fb_id =  Js.to_string s##userID in
+          let access_token = Js.to_string s##accessToken in
+          lwt u = %facebook_sign_in (fb_id,access_token) in
+          connect (Some u);
+          Lwt.return_unit
+
+        | None ->
+          Balsa_log.warning "Facebook connection error";
+          failwith "facebook connection abort"
+    end with _ ->
+      if (Balsa_config.get_bool "debug_mode") then begin
+        lwt u = %debug_sign_in () in
         connect (Some u);
         Lwt.return_unit
-
-      | None ->
+      end  else begin
         Balsa_log.warning "Facebook connection error";
         failwith "facebook connection abort"
-
+      end
 }}

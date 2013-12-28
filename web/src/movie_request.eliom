@@ -27,6 +27,7 @@ struct
 
   let to_client m =
     lwt genres = Genre_request.list_of_uid m.Graph.Movie.genres in
+
     Lwt.return ({
         uid = m.Graph.Movie.uid ;
         title = m.Graph.Movie.title ;

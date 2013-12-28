@@ -56,7 +56,21 @@ let fetch_moviedb_configuration () =
   Lwt.return (Json_ext_themoviedb_conf.from_json (Json_ext.from_string s))
 
 let lazy_config_moviedb = lazy (
-  fetch_moviedb_configuration ()
+  try_lwt
+    fetch_moviedb_configuration ()
+  with e ->
+    if (Balsa_config.get_bool "allow_default_moviedb_config") then
+      Lwt.return ({
+          images = {
+            base_url = "http://localhost";
+            secure_base_url = "http://localhost" ;
+            poster_sizes = [] ;
+            backdrop_sizes = [] ;
+            profile_sizes = [] ;
+            logo_sizes = [] ;
+          }
+        })
+    else (raise e)
 )
 
 let get_moviedb_conf =

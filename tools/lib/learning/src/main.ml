@@ -390,7 +390,7 @@ let batch config user_db movie_db genre_db rating_db =
   lwt _ = do_ () in
   Lwt.return_unit
 
-let user_movie_cost user movie =
+let predicted_rating user movie =
   (* to calculate the value we use cost with a rating of 0. So we got: (Theta)T * X - 0 *)
   cost user.Graph.User.vector movie.Graph.Movie.vector 0
 

@@ -12,11 +12,23 @@
           Lwt.return None
     )
 
-  let user_rating =
+  let user_rating : (Graph.Movie.key, [ `Average | `Predicted of float | `Rating of int ]) Eliom_pervasives.server_function =
     server_function Json.t<Graph.Movie.key> (
       fun m_uid ->
-        lwt u_uid = Connection.get_uid () in
-        Rating_request.get_rating_value Rating_request.Exception m_uid u_uid
+        lwt u_uid = Connection.get_uid_opt () in
+        match_lwt Connection.get_uid_opt () with
+          | Some u_uid -> begin
+              match_lwt Rating_request.get_rating_value Rating_request.Option m_uid u_uid with
+                | Some r ->
+                  Lwt.return (`Rating r)
+                | None ->
+                  lwt u = Db.User.find u_uid in
+                  lwt m = Db.Movie.find m_uid in
+                  let pr = Learning.Main.predicted_rating u m in
+                  Lwt.return (`Predicted pr)
+            end
+          | None ->
+            Lwt.return `Average
     )
 
   let rate =
@@ -80,7 +92,7 @@
   (*** RATING STARS **)
 
   let rating_dom ?lazy_ev m_uid =
-    let rating,update_rating = S.create None in
+    let rating,update_rating = S.create (`Rating 0) in
     let over_rating,update_over_rating = S.create None in
 
     let fetch_rating () =
@@ -89,9 +101,8 @@
           | Some _ ->
             Lwt.async (
               fun _ ->
-                lwt r = %user_rating m_uid in
-                update_rating (Some r);
-                update_over_rating (Some r);
+                lwt rating = %user_rating m_uid in
+                update_rating rating;
                 Lwt.return_unit
             );
           | None -> ()
@@ -107,45 +118,61 @@
         fetch_rating ()
     end;
 
-    R.node (
-      S.l3 (
-        fun connected r over_r ->
-          match connected with
-            | Some _ ->
-              let onclick n =
-                a_onclick (
-                  fun _ ->
-                    update_rating (Some n);
-                    Lwt.async (fun _ -> %rate (m_uid,n));
-                    add_missing_rating m_uid ;
-                    raise Eliom_lib.False
-                )
-              in
-              let selected_class () =
-                match over_r with
-                  | Some n -> string_of_int n
-                  | None -> "none"
-              in
 
-              div ~a:[ a_class ["ratings_container"]; a_onmouseout (fun _ -> update_over_rating (S.value rating)) ] [
-                div ~a:[ a_class ["ratings" ]] [
-                ];
-                div ~a:[ a_class ["ratings"; "rated"; (Printf.sprintf "rated_%s" (selected_class ())) ]] [
-                ];
-                div ~a:[ a_class ["ratings_btn"]; a_onmouseout (fun _ -> update_over_rating (S.value rating)) ] [
-                  div ~a:[ onclick 1; a_onmouseover (fun _ -> update_over_rating (Some 1)) ] [ pcdata " " ];
-                  div ~a:[ onclick 2; a_onmouseover (fun _ -> update_over_rating (Some 2)) ] [ pcdata " " ];
-                  div ~a:[ onclick 3; a_onmouseover (fun _ -> update_over_rating (Some 3)) ] [ pcdata " " ];
-                  div ~a:[ onclick 4; a_onmouseover (fun _ -> update_over_rating (Some 4)) ] [ pcdata " " ];
-                  div ~a:[ onclick 5; a_onmouseover (fun _ -> update_over_rating (Some 5)) ] [ pcdata " " ];
+    let rating_dom =
+      R.node (
+        S.l2 (
+          fun rating over_r ->
+            match rating with
+              | `Rating _
+              | `Predicted _ ->
+                let onclick n =
+                  a_onclick (
+                    fun _ ->
+                      update_rating (`Rating n);
+                      Lwt.async (fun _ -> %rate (m_uid,n));
+                      add_missing_rating m_uid ;
+                      raise Eliom_lib.False
+                  )
+                in
+                let rating_classes, rating_style =
+                  match over_r, rating with
+                    | Some r, _ ->
+                      Balsa_log.debug "over_r : %d" r;
+                      ["ratings"; "rated"; (Printf.sprintf "rated_%s" (string_of_int r)) ], ""
+                    | None, `Rating r ->
+                      Balsa_log.debug "rating : %d" r;
+                      [ "ratings"; "rated"; (Printf.sprintf "rated_%s" (string_of_int r)) ], ""
+                    (* each rating star are 20% of the width *)
+                    | None, `Predicted r ->
+                      Balsa_log.debug "predicted : %.2f" r;
+                      [ "ratings"; "predicted" ], (Printf.sprintf "width:%f%%" (r *. 20.))
+                    | _ -> [], ""
+                in
+
+                div [
+                  div ~a:[ a_class ["ratings" ] ] [
+                  ];
+                  div ~a:[ a_class rating_classes; a_style rating_style ] [
+                  ];
+                  div ~a:[ a_class ["ratings_btn"]; a_onmouseout (fun _ -> update_over_rating None) ] [
+                    div ~a:[ onclick 1; a_onmouseover (fun _ -> update_over_rating (Some 1)) ] [ pcdata " " ];
+                    div ~a:[ onclick 2; a_onmouseover (fun _ -> update_over_rating (Some 2)) ] [ pcdata " " ];
+                    div ~a:[ onclick 3; a_onmouseover (fun _ -> update_over_rating (Some 3)) ] [ pcdata " " ];
+                    div ~a:[ onclick 4; a_onmouseover (fun _ -> update_over_rating (Some 4)) ] [ pcdata " " ];
+                    div ~a:[ onclick 5; a_onmouseover (fun _ -> update_over_rating (Some 5)) ] [ pcdata " " ];
+                  ]
                 ]
-              ]
-            | None ->
-              div ~a:[ a_class ["ratings_container"]] [
-                p [ pcdata "todo: display average" ]
-              ]
-      ) Connection.connected rating over_rating
-    )
+              | `Average ->
+                div ~a:[ a_class ["ratings_container"]] [
+                  p [ pcdata "todo: display average" ]
+                ]
+        ) rating over_rating
+      )
+    in
+    div ~a:[ a_class ["ratings_container"]; a_onmouseout (fun _ -> update_over_rating None) ] [
+      rating_dom
+    ]
 
 
   (*** MOVIE LIST ELEMENT **)

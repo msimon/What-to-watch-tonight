@@ -5,8 +5,8 @@
     margin-left: 15px;
     margin-bottom: 5px;
 
-    > div.ratings_btn {
-      height:20px;
+    div.ratings_btn {
+      height:22px;
       position: relative;
       top: -44px;
       > div {
@@ -14,13 +14,13 @@
         margin:0;
         padding: 0;
         width: 19px;
-        height: 18px;
+        height: 22px;
         float:left ;
         border: 0;
       }
     }
 
-    > div.ratings {
+    div.ratings {
       background-image: url("/img/stars.png");
       height: 20px;
       background-position: 0 -120px;
