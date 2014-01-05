@@ -23,9 +23,13 @@
                   Lwt.return (`Rating r)
                 | None ->
                   lwt u = Db.User.find u_uid in
-                  lwt m = Db.Movie.find m_uid in
-                  let pr = Learning.Main.predicted_rating u m in
-                  Lwt.return (`Predicted pr)
+                  if (List.length u.Graph.User.ratings < (Balsa_config.get_int "minimum_rating_for_suggestion")) then
+                    Lwt.return `Average
+                  else begin
+                    lwt m = Db.Movie.find m_uid in
+                    let pr = Learning.Main.predicted_rating u m in
+                    Lwt.return (`Predicted pr)
+                  end
             end
           | None ->
             Lwt.return `Average
@@ -61,12 +65,17 @@
   let _ =
     E.iter (
       fun _ ->
-        Lwt.async (
-          fun _ ->
-            lwt ratings = %rate_nb () in
-            missing_rating_u ratings ;
-            Lwt.return_unit
-        )
+        S.iter (
+          function
+            | Some _ ->
+              Lwt.async (
+                fun _ ->
+                  lwt ratings = %rate_nb () in
+                  missing_rating_u ratings ;
+                  Lwt.return_unit
+              )
+            | None -> ()
+        ) Connection.connected;
     ) (E.once Path.init_aux)
 
   let missing_rating_popup () =
@@ -78,12 +87,29 @@
             div ~a:[ a_class ["missing_cover"]] [
               div [
                 p [
-                  span [ pcdata "A least" ];
                   span ~a:[ a_class ["number"]] [ pcdata (string_of_int (min_rate - (List.length ratings))) ];
-                  span [ pcdata "rating or more are required for suggestions" ]
+                  span [ pcdata "more rating are necessary to build your taste profile" ]
                 ]
               ]
             ]
+          | Some ratings when (List.length ratings) = min_rate ->
+            let d =
+              div ~a:[ a_class ["missing_cover"]] [
+                div [
+                  p [
+                    span [ pcdata "Your taste profile is being build. We will soon display you personalized recommendations" ];
+                  ]
+                ]
+              ]
+            in
+            Lwt.async (
+              fun _ ->
+                lwt _ = Lwt_js.sleep 5. in
+                Manip.SetCss.display d "none";
+                Lwt.return_unit
+            );
+
+            d
           | _ ->
             div ~a:[ a_style "display:none" ] []
       ) missing_rating
@@ -91,7 +117,8 @@
 
   (*** RATING STARS **)
 
-  let rating_dom ?lazy_ev m_uid =
+  let rating_dom ?lazy_ev movie =
+    let m_uid = movie.Movie_request.uid in
     let rating,update_rating = S.create (`Rating 0) in
     let over_rating,update_over_rating = S.create None in
 
@@ -105,7 +132,8 @@
                 update_rating rating;
                 Lwt.return_unit
             );
-          | None -> ()
+          | None ->
+            update_rating `Average
       ) Connection.connected;
     in
 
@@ -123,50 +151,45 @@
       R.node (
         S.l2 (
           fun rating over_r ->
-            match rating with
-              | `Rating _
-              | `Predicted _ ->
-                let onclick n =
-                  a_onclick (
-                    fun _ ->
-                      update_rating (`Rating n);
-                      Lwt.async (fun _ -> %rate (m_uid,n));
-                      add_missing_rating m_uid ;
-                      raise Eliom_lib.False
-                  )
-                in
-                let rating_classes, rating_style =
-                  match over_r, rating with
-                    | Some r, _ ->
-                      Balsa_log.debug "over_r : %d" r;
-                      ["ratings"; "rated"; (Printf.sprintf "rated_%s" (string_of_int r)) ], ""
-                    | None, `Rating r ->
-                      Balsa_log.debug "rating : %d" r;
-                      [ "ratings"; "rated"; (Printf.sprintf "rated_%s" (string_of_int r)) ], ""
-                    (* each rating star are 20% of the width *)
-                    | None, `Predicted r ->
-                      Balsa_log.debug "predicted : %.2f" r;
-                      [ "ratings"; "predicted" ], (Printf.sprintf "width:%f%%" (r *. 20.))
-                    | _ -> [], ""
-                in
+            let onclick n =
+              a_onclick (
+                fun _ ->
+                  update_rating (`Rating n);
+                  Lwt.async (fun _ -> %rate (m_uid,n));
+                  add_missing_rating m_uid ;
+                  raise Eliom_lib.False
+              )
+            in
+            let rating_classes, rating_style =
+              match over_r, rating with
+                | Some r, _ ->
+                  Balsa_log.debug "over_r : %d" r;
+                  ["ratings"; "rated"; (Printf.sprintf "rated_%s" (string_of_int r)) ], ""
+                | None, `Rating r ->
+                  Balsa_log.debug "rating : %d" r;
+                  [ "ratings"; "rated"; (Printf.sprintf "rated_%s" (string_of_int r)) ], ""
+                (* each rating star are 20% of the width *)
+                | None, `Predicted r ->
+                  Balsa_log.debug "predicted : %.2f" r;
+                  [ "ratings"; "predicted" ], (Printf.sprintf "width:%f%%" (r *. 20.))
+                | None, `Average ->
+                  Balsa_log.debug "Average : %.2f" movie.Movie_request.vote_average ;
+                  [ "ratings"; "average" ], (Printf.sprintf "width:%f%%" (movie.Movie_request.vote_average *. 20.))
+            in
 
-                div [
-                  div ~a:[ a_class ["ratings" ] ] [
-                  ];
-                  div ~a:[ a_class rating_classes; a_style rating_style ] [
-                  ];
-                  div ~a:[ a_class ["ratings_btn"]; a_onmouseout (fun _ -> update_over_rating None) ] [
-                    div ~a:[ onclick 1; a_onmouseover (fun _ -> update_over_rating (Some 1)) ] [ pcdata " " ];
-                    div ~a:[ onclick 2; a_onmouseover (fun _ -> update_over_rating (Some 2)) ] [ pcdata " " ];
-                    div ~a:[ onclick 3; a_onmouseover (fun _ -> update_over_rating (Some 3)) ] [ pcdata " " ];
-                    div ~a:[ onclick 4; a_onmouseover (fun _ -> update_over_rating (Some 4)) ] [ pcdata " " ];
-                    div ~a:[ onclick 5; a_onmouseover (fun _ -> update_over_rating (Some 5)) ] [ pcdata " " ];
-                  ]
-                ]
-              | `Average ->
-                div ~a:[ a_class ["ratings_container"]] [
-                  p [ pcdata "todo: display average" ]
-                ]
+            div [
+              div ~a:[ a_class ["ratings" ] ] [
+              ];
+              div ~a:[ a_class rating_classes; a_style rating_style ] [
+              ];
+              div ~a:[ a_class ["ratings_btn"]; a_onmouseout (fun _ -> update_over_rating None) ] [
+                div ~a:[ onclick 1; a_onmouseover (fun _ -> update_over_rating (Some 1)) ] [ pcdata " " ];
+                div ~a:[ onclick 2; a_onmouseover (fun _ -> update_over_rating (Some 2)) ] [ pcdata " " ];
+                div ~a:[ onclick 3; a_onmouseover (fun _ -> update_over_rating (Some 3)) ] [ pcdata " " ];
+                div ~a:[ onclick 4; a_onmouseover (fun _ -> update_over_rating (Some 4)) ] [ pcdata " " ];
+                div ~a:[ onclick 5; a_onmouseover (fun _ -> update_over_rating (Some 5)) ] [ pcdata " " ];
+              ]
+            ]
         ) rating over_rating
       )
     in
@@ -210,7 +233,7 @@
                   Path.a ~service:(Path.Movie m.uid) ~a:[ a_class ["more_info_link"]] [ pcdata "More Info"]
                 ]
             ) (div ~a:[ a_style "display:none" ] []) m.overview;
-            rating_dom ~lazy_ev m.uid
+            rating_dom ~lazy_ev m
           ]
         ]
       ]

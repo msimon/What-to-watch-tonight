@@ -47,7 +47,7 @@
 
       div [
         h1 [ pcdata m.title ];
-        Dom_gen.rating_dom m_uid ;
+        Dom_gen.rating_dom m ;
         div [
           div [
             span [
