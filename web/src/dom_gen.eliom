@@ -137,17 +137,7 @@
       ) Connection.connected;
     in
 
-    begin match lazy_ev with
-      | Some e ->
-        E.iter (
-          fun _ -> fetch_rating ()
-        )(E.once e)
-      | None ->
-        fetch_rating ()
-    end;
-
-
-    let rating_dom =
+    let rating_dom () =
       R.node (
         S.l2 (
           fun rating over_r ->
@@ -193,10 +183,24 @@
         ) rating over_rating
       )
     in
-    div ~a:[ a_class ["ratings_container"]; a_onmouseout (fun _ -> update_over_rating None) ] [
-      rating_dom
-    ]
 
+    let container =
+      div ~a:[ a_class ["ratings_container"]; a_onmouseout (fun _ -> update_over_rating None) ] []
+    in
+
+    begin match lazy_ev with
+      | Some e ->
+        E.iter (
+          fun _ ->
+            fetch_rating ();
+            Manip.replaceAllChild container [ rating_dom () ]
+        )(E.once e)
+      | None ->
+        fetch_rating ();
+        Manip.replaceAllChild container [ rating_dom () ]
+    end;
+
+    container
 
   (*** MOVIE LIST ELEMENT **)
 
