@@ -204,7 +204,7 @@ let batch config user_db movie_db genre_db rating_db =
     j
   in
 
-  let gradient_descent ()=
+  let gradient_descent () =
     let open Graph in
     let _print_vect u_uid m_uid =
       Balsa_log.debug "in printf vect..";
@@ -219,8 +219,11 @@ let batch config user_db movie_db genre_db rating_db =
     in
 
     let movie_cost movie k =
-      (* E(r) [ Cost * Theta(u) ] *)
-      let ratings = Hashtbl.find m_rating_htbl movie.Movie.uid in
+      (* E [ Cost * Theta(u) ] *)
+      let ratings =
+        try Hashtbl.find m_rating_htbl movie.Movie.uid
+        with _ -> []
+      in
       List.fold_left (
         fun m_cost r ->
           let u = Hashtbl.find user_htbl r.Rating.user_uid in
@@ -230,14 +233,14 @@ let batch config user_db movie_db genre_db rating_db =
       ) 0. ratings
     in
 
-    let movie () =
+    let movie alpha =
       let vect_htbl = Hashtbl.create (Hashtbl.length movie_htbl) in
       Hashtbl.iter (
         fun m_uid movie ->
           let v = List.mapi (
               fun k m_vect ->
                 let value = m_vect.Param.value
-                            -. (config.learning.alpha *. ((movie_cost movie k) +. (config.learning.lambda *. m_vect.Param.value)))
+                            -. (alpha *. ((movie_cost movie k) +. (config.learning.lambda *. m_vect.Param.value)))
                 in
                 {
                   m_vect with
@@ -245,6 +248,7 @@ let batch config user_db movie_db genre_db rating_db =
                 }
             ) movie.Movie.vector
           in
+
           Hashtbl.add vect_htbl m_uid v
       ) movie_htbl;
       vect_htbl
@@ -252,8 +256,10 @@ let batch config user_db movie_db genre_db rating_db =
 
     let user_cost user k =
       (* E(r) [ Cost * Theta(u) ] *)
-      let ratings = Hashtbl.find u_rating_htbl user.User.uid in
-      (* Printf.printf "user_cost for %d : # of rating %d\n" user.User.uid (List.length ratings) ; *)
+      let ratings =
+        try Hashtbl.find u_rating_htbl user.User.uid
+        with _ -> []
+      in
 
       let v = List.fold_left (
           fun u_cost r ->
@@ -266,7 +272,7 @@ let batch config user_db movie_db genre_db rating_db =
       v
     in
 
-    let user () =
+    let user alpha =
       let vect_htbl = Hashtbl.create (Hashtbl.length user_htbl) in
       Hashtbl.iter (
         fun u_uid user ->
@@ -274,7 +280,7 @@ let batch config user_db movie_db genre_db rating_db =
               fun k u_vect ->
                 let cost = (user_cost user k) in
                 let reg = (config.learning.lambda *. u_vect.Param.value) in
-                let value = u_vect.Param.value -. (config.learning.alpha *. (cost +. reg)) in
+                let value = u_vect.Param.value -. (alpha *. (cost +. reg)) in
                 {
                   u_vect with
                     Param.value;
@@ -290,11 +296,11 @@ let batch config user_db movie_db genre_db rating_db =
     let rec iter alpha prev_c n =
       if n = 0 then ()
       else begin
-        let new_movie_vect = movie () in
-        let new_user_vect = user () in
+        let new_movie_vect = movie alpha in
+        let new_user_vect = user alpha in
 
         (* if cost function is lower, we replace the vector and make the step 5% higher
-           if it's higher we divide the step by 50%
+           if it's higher we lower the step by 50%
         *)
         let c = cost_function (`CFVect (new_user_vect,new_movie_vect)) in
 
@@ -322,7 +328,7 @@ let batch config user_db movie_db genre_db rating_db =
           let alpha =
             if c < prev_c then begin
               let a = alpha *. 1.05 in
-              Balsa_log.info "i: %d, alpha raised: %f" n a ;
+              Balsa_log.info "i: %d, alpha raised to %f" n a ;
               a
             end else alpha
           in
@@ -330,9 +336,11 @@ let batch config user_db movie_db genre_db rating_db =
           iter alpha c (n - 1)
         end else begin
           let alpha = alpha /. 2. in
-          Balsa_log.warning "alpha lowered: %f" alpha ;
+          Balsa_log.warning "alpha lowered to %f" alpha ;
           if alpha > 0.000005 then
-            iter alpha prev_c n;
+            iter alpha prev_c n
+          else
+            Balsa_log.error "Alpha went to low"
         end
       end
     in
@@ -361,9 +369,11 @@ let batch config user_db movie_db genre_db rating_db =
     in
 
     lwt _ = load_ratings_params rating_db rating_htbl u_rating_htbl m_rating_htbl user_htbl movie_htbl in
+    Balsa_log.debug "m_rating_htbl = %d" (Hashtbl.length m_rating_htbl);
 
     gradient_descent ();
 
+    Balsa_log.info "Updating movies' vector";
     (* update user and movie vector in db *)
     let movies_update = Hashtbl.fold (
         fun key v acc ->
@@ -375,6 +385,7 @@ let batch config user_db movie_db genre_db rating_db =
     in
     lwt _ = Lwt_list.iter_p (fun m -> lwt _ = m in Lwt.return_unit) movies_update in
 
+    Balsa_log.info "Updating users' vector";
     let users_update = Hashtbl.fold (
         fun key v acc ->
           let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) v.Graph.User.vector in
@@ -392,7 +403,9 @@ let batch config user_db movie_db genre_db rating_db =
 
 let predicted_rating user movie =
   (* to calculate the value we use cost with a rating of 0. So we got: (Theta)T * X - 0 *)
-  cost user.Graph.User.vector movie.Graph.Movie.vector 0
+  let r = cost user.Graph.User.vector movie.Graph.Movie.vector 0 in
+  if r < 0. then 0.
+  else r
 
 let batch_user config genre_db movie_db user_db rating_db user_uid =
   let module Rating_db = (val rating_db : Graph_server.Db.Sig with type t = Graph_server.Rating.t and type key = Graph_server.Rating.key) in
@@ -441,14 +454,14 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
       Lwt.return v
     in
 
-    let user_grad user =
+    let user_grad alpha user =
       let k = ref 0 in
       lwt vector =
         Lwt_list.map_s (
           fun u_vect ->
             lwt cost = (user_cost user !k) in
             let reg = (config.learning.lambda *. u_vect.Graph.Param.value) in
-            let value = u_vect.Graph.Param.value -. (config.learning.alpha *. (cost +. reg)) in
+            let value = u_vect.Graph.Param.value -. (alpha *. (cost +. reg)) in
             incr k;
             Lwt.return ({
               u_vect with
@@ -467,7 +480,7 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
       if n = 0 then Lwt.return user
       else begin
         Balsa_log.debug "loop nb: %d" n;
-        lwt new_user = user_grad user in
+        lwt new_user = user_grad alpha user in
 
         (* if cost function is lower, we replace the vector and make the step 5% higher
            if it's higher we divide the step by 50%
