@@ -17,18 +17,32 @@
   open Balsa_react
 
   let header () =
+    let logout_display,display_logout = S.create false in
     let profile_section =
-      R.node (
+       R.node (
         S.map (
           function
             | Some u ->
-              Path.a ~service:Path.Profile [
-                div [
+              (* reset in case of several log-in/log-out *)
+              display_logout false;
+              div  [
+                div ~a:[ a_onclick (fun _ -> display_logout (not (S.value logout_display))) ] [
                   Img_gen.profile_picture u ;
                   span [ pcdata u.User_request.name ];
                   span ~a:[ a_class ["vertical_sep"]] [];
-                ]
+                ];
+                R.node (
+                  S.map (
+                    function
+                      | true ->
+                        div ~a:[ a_class["logout"]; a_onclick (fun _ -> Connection.logout ())] [ pcdata "Log Out" ];
+                      | false ->
+                        div ~a:[ a_style "display:none" ] [];
+                  ) logout_display
+                );
               ]
+
+              (* Path.a ~service:Path.Profile [] *)
             | None ->
               div [
                 div ~a:[

@@ -80,11 +80,11 @@
         Lwt.return u
     )
 
-  let sign_out =
+  let logout =
     server_function Json.t<unit> (
       fun _ ->
         lwt _ = remove_session () in
-        Lwt.return_false
+        Lwt.return_unit
     )
 
 }}
@@ -132,4 +132,10 @@
         Balsa_log.warning "Facebook connection error";
         failwith "facebook connection abort"
       end
+
+  let logout () =
+    Balsa_facebook.logout ();
+    Lwt.async (fun _ -> %logout ());
+    connect (None);
+
 }}
