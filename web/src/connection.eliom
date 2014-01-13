@@ -23,6 +23,11 @@
       | None ->
         raise Not_connected
 
+
+  (** Session keep the value of the user.
+     Since there is chance that the user is modify over time
+     we make a check each time the app is loaded
+  *)
   let check =
     server_function Json.t<unit> (
       fun _ ->
@@ -88,9 +93,10 @@
 
   open Balsa_react
 
+  (** connected hold the current User_request.user option *)
   let connected,connect = S.create None
 
-  (* This function should be call after page initization
+  (** This function should be call after page initization
      Since we use a react signal, the page will be updated by itself if a change occured.
      This way, if no change occured (which should be most of the time), we do not block page load.
   *)

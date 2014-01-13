@@ -22,7 +22,7 @@
     let open Movie_request in
 
     let movie_list_ev,update_movie_list = E.create () in
-    let _ =
+    let fetch_movie_ev =
       Balsa_paging.paginate
         ~step:100
         ~uid_of_data:(fun m -> m.uid)
@@ -30,6 +30,12 @@
         ~append:(`Event update_movie_list)
         ~generate_dom:Dom_gen.movie_dom
     in
+
+    (* we the page change, we cancel the event that fetch new movies *)
+    E.iter (
+      fun _ ->
+        E.stop fetch_movie_ev;
+    ) (E.once (S.changes Path.service));
 
     let width_stl,update_width_stl = S.create "100%" in
 
@@ -52,6 +58,7 @@
 
     E.iter (
       fun l ->
+        Balsa_log.debug "receving new movies";
         List.iter (
           fun el ->
             Manip.appendChild movies_dom el

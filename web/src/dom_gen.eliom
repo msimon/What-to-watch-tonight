@@ -137,7 +137,7 @@
       ) Connection.connected;
     in
 
-    let rating_dom () =
+    let rating_stars () =
       R.node (
         S.l2 (
           fun rating over_r ->
@@ -160,14 +160,14 @@
                   [ "ratings"; "rated"; (Printf.sprintf "rated_%s" (string_of_int r)) ], ""
                 (* each rating star are 20% of the width *)
                 | None, `Predicted r ->
-                  Balsa_log.debug "predicted : %.2f" r;
-                  [ "ratings"; "predicted" ], (Printf.sprintf "width:%f%%" (r *. 20.))
+                  Balsa_log.debug "predicted : %.1f" r;
+                  [ "ratings"; "predicted" ], (Printf.sprintf "width:%.1f%%" (r *. 19.42))
                 | None, `Average ->
-                  Balsa_log.debug "Average : %.2f" movie.Movie_request.vote_average ;
-                  [ "ratings"; "average" ], (Printf.sprintf "width:%f%%" (movie.Movie_request.vote_average *. 20.))
+                  Balsa_log.debug "Average : %.1f" movie.Movie_request.vote_average ;
+                  [ "ratings"; "average" ], (Printf.sprintf "width:%.1f%%" (movie.Movie_request.vote_average *. 19.42))
             in
 
-            div [
+            div ~a:[ a_class ["ratings_stars"]] [
               div ~a:[ a_class ["ratings" ] ] [
               ];
               div ~a:[ a_class rating_classes; a_style rating_style ] [
@@ -184,8 +184,30 @@
       )
     in
 
+    let rating_txt () =
+      R.node (
+        S.l2 (
+          fun rating c ->
+            let d =
+              match rating, c with
+                | `Rating r, Some u -> p ~a:[ a_class[ "rating_rated"] ] [
+                    pcdata (Printf.sprintf "(Rated %d by %s)" r u.User_request.name);
+                  ]
+                | `Predicted r, Some u -> p ~a:[ a_class [ "rating_predicted" ] ] [
+                    pcdata (Printf.sprintf "Best guess for %s: %.1f" u.User_request.name r);
+                  ]
+                | `Average, _ -> p ~a:[ a_class [ "rating_average" ]] [
+                    pcdata (Printf.sprintf "Average of %d ratings: %.1f stars" movie.Movie_request.vote_count movie.Movie_request.vote_average)
+                  ]
+                | _ -> p ~a:[ a_style "display:none" ] []
+            in
+            div ~a:[ a_class ["ratings_txt"]] [d];
+        ) rating Connection.connected
+      )
+    in
+
     let container =
-      div ~a:[ a_class ["ratings_container"]; a_onmouseout (fun _ -> update_over_rating None) ] []
+      div ~a:[ a_class ["ratings_container"; "clearfix"]; a_onmouseout (fun _ -> update_over_rating None) ] []
     in
 
     begin match lazy_ev with
@@ -193,11 +215,11 @@
         E.iter (
           fun _ ->
             fetch_rating ();
-            Manip.replaceAllChild container [ rating_dom () ]
+            Manip.replaceAllChild container [ rating_stars (); rating_txt () ]
         )(E.once e)
       | None ->
         fetch_rating ();
-        Manip.replaceAllChild container [ rating_dom () ]
+        Manip.replaceAllChild container [ rating_stars (); rating_txt () ]
     end;
 
     container
