@@ -75,6 +75,7 @@ let facebook_sign_in (fb_id, access_token) =
             facebook_access_token_expire_on = Int64.of_int expired_in ;
           }) ;
         vector = [];
+        top_movies = [];
       } in
 
       lwt _ = Db.User.insert u in

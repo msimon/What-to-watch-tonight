@@ -83,6 +83,7 @@ let create_new_user () =
         facebook_access_token_expire_on = 0L ;
       } ;
     vector = [];
+    top_movies = [];
   }
   in
 

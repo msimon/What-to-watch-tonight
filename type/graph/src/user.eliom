@@ -7,12 +7,23 @@
     facebook_access_token_expire_on : int64 ;
   } deriving (Bson_ext)
 
+  type genre_info = {
+    genre_uid : Uid.genre Uid.uid ;
+    weight: float ;
+  } deriving (Bson_ext)
+
+  type top_movie = {
+    genre_info: genre_info option ;
+    movie_list: Uid.movie Uid.uid list ;
+  } deriving (Bson_ext)
+
   type t = {
     uid: key ;
     name: string ;
     ratings: Uid.rating Uid.uid list ;
-    facebook : facebook option ;
-    vector : Param.t list ;
+    facebook: facebook option ;
+    vector: Param.t list ;
+    top_movies: top_movie list ;
   } deriving (Bson_ext)
 }}
 
@@ -22,7 +33,8 @@ type uid_typ = Uid.user
 let uid_typ = Uid.User
 
 let forbiden_update = [
-  "vector"
+  "vector";
+  "top_movies"
 ]
 
 let search uid =

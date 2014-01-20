@@ -211,6 +211,7 @@ let user config user_db =
           facebook = None ;
           ratings = [] ;
           vector = [] ;
+          top_movies = [];
         } in
 
         lwt _ = User_db.insert moviedb_user in

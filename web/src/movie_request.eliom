@@ -238,7 +238,7 @@ let what_to_watch u_uid_opt =
         read_queries acc thread_list
     in
 
-    lwt genres = Db.Genre.query Bson.empty in
+    lwt genres = Db.Genre.query ~full:true Bson.empty in
     let queries = build_paralel_query [] genres in
 
     lwt l = read_queries [] queries in

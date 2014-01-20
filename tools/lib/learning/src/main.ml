@@ -120,6 +120,99 @@ let cost u_v m_v rating =
   v -. (float_of_int rating)
 
 
+
+(** Predict a rating for a user and a movie **)
+let predicted_rating user movie =
+  (* to calculate the value we use cost with a rating of 0. So we got: (Theta)T * X - 0 *)
+  let r = cost user.Graph.User.vector movie.Graph.Movie.vector 0 in
+  if r < 0. then 0.
+  else r
+
+module Max_heap = Balsa_heap.Binary (struct
+    type t = (float * Graph.Movie.t)
+    let compare (pr1,m1) (pr2,m2) =
+      if (abs_float(pr1 -. pr2) < epsilon_float) then
+        compare m2.Graph.Movie.vote_count m1.Graph.Movie.vote_count
+      else
+        compare pr2 pr1
+    let max_size = (Some 20)
+  end)
+
+let top_movies_by_user user movie_htbl =
+  (** we create a hastble (Genre.uid option, Heap) to compute top movie by genre**)
+  let heap_htbl = Hashtbl.create 40 in
+
+  let get_heap g_uid =
+    try
+      Hashtbl.find heap_htbl g_uid
+    with Not_found ->
+      let heap = Max_heap.empty () in
+      Hashtbl.add heap_htbl g_uid heap;
+      heap
+  in
+
+  (** we are going thru all the movies and insert them into the heap
+      1 global heap, one heap by genre.
+      In case of similar prediction, movie with more overal rating are put on top
+   **)
+  Hashtbl.iter (
+    fun key movie ->
+      let gs = movie.Graph.Movie.genres in
+      let pr = predicted_rating user movie in
+
+      Max_heap.insert (get_heap None) (pr, movie);
+      List.iter (
+        fun g_uid ->
+          Max_heap.insert (get_heap (Some g_uid)) (pr,movie);
+      ) gs;
+  ) movie_htbl;
+
+  let top_movies = Hashtbl.fold (
+      fun key heap acc ->
+        let genre_info = Balsa_option.map (
+            fun g_uid ->
+              let weight =
+                Max_heap.fold (
+                  fun (pr,_) n -> pr +. n
+                ) heap 0.
+              in
+              {
+                Graph.User.genre_uid = g_uid;
+                weight ;
+              }
+          ) key
+        in
+
+        let movie_list =
+          Max_heap.fold (
+            fun (_,m) acc ->
+              m.Graph.Movie.uid::acc
+          ) heap []
+        in
+
+        {
+          Graph.User.genre_info = genre_info;
+          movie_list = List.rev movie_list ;
+        }::acc
+
+    ) heap_htbl []
+  in
+
+  List.sort (
+    fun v1 v2 ->
+      (* we want the global top movie as the first element of the list
+         This function assure that it always seen as bigger
+      *)
+      match v1.Graph.User.genre_info, v2.Graph.User.genre_info with
+        | None, None -> 0
+        | None, _ -> -1
+        | _ , None -> 1
+        | Some g1, Some g2 ->
+          compare g2.Graph.User.weight g1.Graph.User.weight
+  ) top_movies
+
+
+(** Calculate the vector for all user and all movies **)
 let batch config user_db movie_db genre_db rating_db =
   let module Movie_db = (val movie_db : Graph_server.Db.Sig with type t = Graph_server.Movie.t and type key = Graph_server.Movie.key) in
   let module User_db = (val user_db : Graph_server.Db.Sig with type t = Graph_server.User.t and type key = Graph_server.User.key) in
@@ -391,6 +484,12 @@ let batch config user_db movie_db genre_db rating_db =
           let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) v.Graph.User.vector in
           let modifier = Bson.add_element "vector" vector Bson.empty in
 
+          let top_movies =
+            (let module M = Bson_ext.Bson_ext_list (Graph.User.Bson_ext_top_movie) in M.to_bson)
+              (top_movies_by_user v movie_htbl)
+          in
+          let modifier = Bson.add_element "top_movies" top_movies modifier in
+
           (User_db.update ~modifier v)::acc
       ) user_htbl []
     in
@@ -401,12 +500,7 @@ let batch config user_db movie_db genre_db rating_db =
   lwt _ = do_ () in
   Lwt.return_unit
 
-let predicted_rating user movie =
-  (* to calculate the value we use cost with a rating of 0. So we got: (Theta)T * X - 0 *)
-  let r = cost user.Graph.User.vector movie.Graph.Movie.vector 0 in
-  if r < 0. then 0.
-  else r
-
+(** Calculate the vector for only one user specified by user_uid **)
 let batch_user config genre_db movie_db user_db rating_db user_uid =
   let module Rating_db = (val rating_db : Graph_server.Db.Sig with type t = Graph_server.Rating.t and type key = Graph_server.Rating.key) in
   let module Movie_db = (val movie_db : Graph_server.Db.Sig with type t = Graph_server.Movie.t and type key = Graph_server.Movie.key) in
