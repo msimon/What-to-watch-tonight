@@ -135,7 +135,6 @@ module Max_heap = Balsa_heap.Binary (struct
         compare m2.Graph.Movie.vote_count m1.Graph.Movie.vote_count
       else
         compare pr2 pr1
-    let max_size = (Some 20)
   end)
 
 let top_movies_by_user user movie_htbl =
@@ -172,10 +171,12 @@ let top_movies_by_user user movie_htbl =
         let genre_info = Balsa_option.map (
             fun g_uid ->
               let weight =
-                Max_heap.fold (
-                  fun (pr,_) n -> pr +. n
-                ) heap 0.
+                Max_heap.ordered_fold ~max:20 (
+                  fun n (pr,_) ->
+                    pr +. n
+                ) 0. heap
               in
+
               {
                 Graph.User.genre_uid = g_uid;
                 weight ;
@@ -184,10 +185,10 @@ let top_movies_by_user user movie_htbl =
         in
 
         let movie_list =
-          Max_heap.fold (
-            fun (_,m) acc ->
+          Max_heap.ordered_fold ~max:20 (
+            fun acc (_,m) ->
               m.Graph.Movie.uid::acc
-          ) heap []
+          ) [] heap
         in
 
         {
