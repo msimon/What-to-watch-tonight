@@ -27,8 +27,11 @@
                     Lwt.return `Average
                   else begin
                     lwt m = Db.Movie.find m_uid in
-                    let pr = Learning.Main.predicted_rating u m in
-                    Lwt.return (`Predicted pr)
+                    try_lwt
+                      let pr = Learning.Main.predicted_rating u m in
+                      Lwt.return (`Predicted pr)
+                    with _ ->
+                      Lwt.return `Average
                   end
             end
           | None ->
