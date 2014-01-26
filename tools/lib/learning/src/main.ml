@@ -171,6 +171,7 @@ let top_movies_by_user rating_db user movie_htbl =
   let (heap_inserted,wakener) = Lwt.task () in
   let hash_size = ref (Hashtbl.length movie_htbl) in
 
+  Balsa_log.debug "Hash_size start at %d" !hash_size;
   Hashtbl.iter (
     fun key movie ->
       let gs = movie.Graph.Movie.genres in
@@ -192,6 +193,7 @@ let top_movies_by_user rating_db user movie_htbl =
           in
 
           decr hash_size;
+
           if !hash_size = 0 then
             Lwt.wakeup wakener ();
 
@@ -199,8 +201,10 @@ let top_movies_by_user rating_db user movie_htbl =
       );
   ) movie_htbl;
 
-  (* this part of the code will wait for the wakener to be waked up *)
+  Balsa_log.debug "Going in sleep mode, waiting to be wakened";
+  (* this part of the code will wait for the wakener to be wakened up *)
   lwt _ = heap_inserted in
+  Balsa_log.debug "The sleeping time is over!";
 
   let top_movies = Hashtbl.fold (
       fun key heap acc ->
@@ -227,12 +231,16 @@ let top_movies_by_user rating_db user movie_htbl =
           ) [] heap
         in
 
+        Balsa_log.debug "movie_list is %d || heap len is %d" (List.length movie_list) (Max_heap.size heap);
+
         {
           Graph.User.genre_info = genre_info;
           movie_list = List.rev movie_list ;
         }::acc
     ) heap_htbl []
   in
+
+  Balsa_log.debug "Top movies have been extracted!";
 
   let l = List.sort (
       fun v1 v2 ->
@@ -247,6 +255,8 @@ let top_movies_by_user rating_db user movie_htbl =
             compare g2.Graph.User.weight g1.Graph.User.weight
     ) top_movies
   in
+
+  Balsa_log.debug "Top movies have been sorted";
 
   Lwt.return l
 
@@ -501,7 +511,6 @@ let batch config user_db movie_db genre_db rating_db =
     in
 
     lwt _ = load_ratings_params rating_db rating_htbl u_rating_htbl m_rating_htbl user_htbl movie_htbl in
-    Balsa_log.debug "m_rating_htbl = %d" (Hashtbl.length m_rating_htbl);
 
     gradient_descent ();
 
@@ -549,16 +558,16 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
 
   let genre_htbl = Hashtbl.create 100 in
   let movie_htbl = Hashtbl.create 40000 in
+  let rating_htbl = Hashtbl.create 100 in
 
   let cost_function user =
-    lwt j =
-      Lwt_list.fold_left_s (
-        fun j rating_uid ->
-          lwt rating = Rating_db.find rating_uid in
-          lwt movie = Movie_db.find rating.Graph.Rating.movie_uid in
+    let j =
+      Hashtbl.fold (
+        fun _ rating j ->
+          let movie = Hashtbl.find movie_htbl rating.Graph.Rating.movie_uid in
 
-          Lwt.return (j +. ((cost user.Graph.User.vector movie.Graph.Movie.vector rating.Graph.Rating.rating) ** 2.))
-      ) 0. user.Graph.User.ratings
+          j +. ((cost user.Graph.User.vector movie.Graph.Movie.vector rating.Graph.Rating.rating) ** 2.)
+      ) rating_htbl 0.
     in
 
     let user_reg =
@@ -569,58 +578,54 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
     in
 
     let j = j /. 2. +. (config.learning.lambda /. 2.) *. user_reg in
-    Balsa_log.debug "Cost : %f" j;
-    Lwt.return j
+    (* Balsa_log.debug "Cost : %f" j; *)
+    j
   in
 
   let gradient_descent user =
     let user_cost user k =
       (* E(r) [ Cost * Theta(u) ] *)
-      lwt v = Lwt_list.fold_left_s (
-          fun u_cost rating_uid ->
-            lwt rating = Rating_db.find rating_uid in
-            lwt movie = Movie_db.find rating.Graph.Rating.movie_uid in
+        Hashtbl.fold (
+          fun _ rating u_cost ->
+            let movie = Hashtbl.find movie_htbl rating.Graph.Rating.movie_uid in
             let m_v_k = (List.nth movie.Graph.Movie.vector k).Graph.Param.value in
 
-            Lwt.return (u_cost +. ((cost user.Graph.User.vector movie.Graph.Movie.vector rating.Graph.Rating.rating) *. m_v_k))
-        ) 0. user.Graph.User.ratings
-      in
-
-      Lwt.return v
+            u_cost +. ((cost user.Graph.User.vector movie.Graph.Movie.vector rating.Graph.Rating.rating) *. m_v_k)
+        ) rating_htbl 0.
     in
 
     let user_grad alpha user =
       let k = ref 0 in
-      lwt vector =
-        Lwt_list.map_s (
+      let vector =
+        List.map (
           fun u_vect ->
-            lwt cost = (user_cost user !k) in
+            let cost = user_cost user !k in
             let reg = (config.learning.lambda *. u_vect.Graph.Param.value) in
             let value = u_vect.Graph.Param.value -. (alpha *. (cost +. reg)) in
             incr k;
-            Lwt.return ({
+            {
               u_vect with
                 Graph.Param.value;
-            })
+            }
         ) user.Graph.User.vector
       in
 
-      Lwt.return {
+      {
         user with
           Graph.User.vector ;
       }
     in
 
-    let rec iter alpha prev_c n (user : Graph.User.t) : Graph.User.t Lwt.t =
-      if n = 0 then Lwt.return user
+    let rec iter alpha prev_c n (user : Graph.User.t) : Graph.User.t =
+      if n = 0 then user
       else begin
-        Balsa_log.debug "loop nb: %d" n;
-        lwt new_user = user_grad alpha user in
+        (* Balsa_log.debug "loop nb: %d" n; *)
+        let new_user = user_grad alpha user in
 
         (* if cost function is lower, we replace the vector and make the step 5% higher
            if it's higher we divide the step by 50%
         *)
-        lwt c = cost_function new_user in
+        let c = cost_function new_user in
 
         if c <= prev_c then begin
           (* if c = prev_c we may have reach a minima,
@@ -639,22 +644,46 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
           Balsa_log.warning "alpha lowered: %f" alpha ;
           if alpha > 0.000005 then
             iter alpha prev_c n user
-          else Lwt.return user
+          else user
         end
       end
     in
 
-    lwt c = cost_function user in
+    let c = cost_function user in
 
     iter config.learning.alpha c 100 user
   in
 
+  let load_ratings user =
+    let query = Bson.add_element "user_uid" (Bson.create_int64 (Int64.of_int (Graph.Uid.get_value user.Graph.User.uid))) Bson.empty in
+    lwt ratings = Rating_db.query_no_cache ~full:true query in
+
+    List.iter (
+      fun r ->
+        Hashtbl.add rating_htbl r.Graph.Rating.uid r
+    ) ratings;
+
+    Lwt.return ()
+  in
+
+  let load_user () =
+    lwt user = User_db.find user_uid in
+    Lwt.return {
+      user with
+        Graph.User.vector = init_vector genre_htbl user.Graph.User.vector
+    }
+  in
+
   lwt _ = load_genres_params genre_db genre_htbl in
   lwt _ = load_movies_params movie_db movie_htbl genre_htbl in
-  lwt user = User_db.find user_uid in
+  lwt user = load_user () in
+  lwt _ = load_ratings user in
 
-  lwt user = gradient_descent user in
+  Balsa_log.info "Starting gradient Descent";
+  let user = gradient_descent user in
+  Balsa_log.info "Gradient descent Finished";
 
+  Balsa_log.info "Updating user vector and top movie";
   (* update the user *)
   let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) user.Graph.User.vector in
   let modifier = Bson.add_element "vector" vector Bson.empty in
@@ -667,4 +696,5 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
 
   lwt _ = User_db.update ~modifier user in
 
+  Balsa_log.info "User %d has been updated" (Graph.Uid.get_value (user.Graph.User.uid));
   Lwt.return  ();
