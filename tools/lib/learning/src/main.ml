@@ -137,7 +137,9 @@ module Max_heap = Balsa_heap.Binary (struct
         compare pr2 pr1
   end)
 
-let top_movies_by_user user movie_htbl =
+let top_movies_by_user rating_db user movie_htbl =
+  let module Rating_db = (val rating_db : Graph_server.Db.Sig with type t = Graph_server.Rating.t and type key = Graph_server.Rating.key) in
+
   (** we create a hastble (Genre.uid option, Heap) to compute top movie by genre**)
   let heap_htbl = Hashtbl.create 40 in
 
@@ -154,17 +156,51 @@ let top_movies_by_user user movie_htbl =
       1 global heap, one heap by genre.
       In case of similar prediction, movie with more overal rating are put on top
    **)
+
+  (** since hashtbl.iter is not lwt friendly,
+      we create a sleeping thread that will only be wakeup when all
+      necessary execution are done
+   **)
+  let get_rating u_uid m_uid =
+    let query = Bson.add_element "user_uid" (Graph.User.bson_uid u_uid) Bson.empty in
+    let query = Bson.add_element "movie_uid" (Graph.Movie.bson_uid m_uid) query in
+
+    Rating_db.query_one_no_cache query
+  in
+
+  let (heap_inserted,wakener) = Lwt.task () in
+  let hash_size = ref (Hashtbl.length movie_htbl) in
+
   Hashtbl.iter (
     fun key movie ->
       let gs = movie.Graph.Movie.genres in
       let pr = predicted_rating user movie in
 
-      Max_heap.insert (get_heap None) (pr, movie);
-      List.iter (
-        fun g_uid ->
-          Max_heap.insert (get_heap (Some g_uid)) (pr,movie);
-      ) gs;
+      Lwt.async (
+        fun _ ->
+          (* check if the user already rated this movie *)
+          lwt _ =
+            match_lwt get_rating user.Graph.User.uid movie.Graph.Movie.uid with
+              | Some r -> Lwt.return ()
+              | None ->
+                Max_heap.insert (get_heap None) (pr, movie);
+                List.iter (
+                  fun g_uid ->
+                    Max_heap.insert (get_heap (Some g_uid)) (pr,movie);
+                ) gs;
+                Lwt.return ()
+          in
+
+          decr hash_size;
+          if !hash_size = 0 then
+            Lwt.wakeup wakener ();
+
+          Lwt.return ()
+      );
   ) movie_htbl;
+
+  (* this part of the code will wait for the wakener to be waked up *)
+  lwt _ = heap_inserted in
 
   let top_movies = Hashtbl.fold (
       fun key heap acc ->
@@ -195,22 +231,24 @@ let top_movies_by_user user movie_htbl =
           Graph.User.genre_info = genre_info;
           movie_list = List.rev movie_list ;
         }::acc
-
     ) heap_htbl []
   in
 
-  List.sort (
-    fun v1 v2 ->
-      (* we want the global top movie as the first element of the list
-         This function assure that it always seen as bigger
-      *)
-      match v1.Graph.User.genre_info, v2.Graph.User.genre_info with
-        | None, None -> 0
-        | None, _ -> -1
-        | _ , None -> 1
-        | Some g1, Some g2 ->
-          compare g2.Graph.User.weight g1.Graph.User.weight
-  ) top_movies
+  let l = List.sort (
+      fun v1 v2 ->
+        (* we want the global top movie as the first element of the list
+           This function assure that it always seen as bigger
+        *)
+        match v1.Graph.User.genre_info, v2.Graph.User.genre_info with
+          | None, None -> 0
+          | None, _ -> -1
+          | _ , None -> 1
+          | Some g1, Some g2 ->
+            compare g2.Graph.User.weight g1.Graph.User.weight
+    ) top_movies
+  in
+
+  Lwt.return l
 
 
 (** Calculate the vector for all user and all movies **)
@@ -480,22 +518,24 @@ let batch config user_db movie_db genre_db rating_db =
     lwt _ = Lwt_list.iter_p (fun m -> lwt _ = m in Lwt.return_unit) movies_update in
 
     Balsa_log.info "Updating users' vector";
-    let users_update = Hashtbl.fold (
-        fun key v acc ->
-          let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) v.Graph.User.vector in
-          let modifier = Bson.add_element "vector" vector Bson.empty in
-
-          let top_movies =
-            (let module M = Bson_ext.Bson_ext_list (Graph.User.Bson_ext_top_movie) in M.to_bson)
-              (top_movies_by_user v movie_htbl)
-          in
-          let modifier = Bson.add_element "top_movies" top_movies modifier in
-
-          (User_db.update ~modifier v)::acc
+    let users_values = Hashtbl.fold (
+        fun key v acc -> v::acc
       ) user_htbl []
     in
 
-    Lwt_list.iter_p (fun m -> lwt _ = m in Lwt.return_unit) users_update
+    Lwt_list.iter_p (
+      fun u ->
+        let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) u.Graph.User.vector in
+        let modifier = Bson.add_element "vector" vector Bson.empty in
+
+        lwt top_movies_u = top_movies_by_user rating_db u movie_htbl in
+        let top_movies =
+          (let module M = Bson_ext.Bson_ext_list (Graph.User.Bson_ext_top_movie) in M.to_bson) top_movies_u
+        in
+        let modifier = Bson.add_element "top_movies" top_movies modifier in
+
+        User_db.update ~modifier u
+    ) users_values
   in
 
   lwt _ = do_ () in
@@ -618,6 +658,13 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
   (* update the user *)
   let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) user.Graph.User.vector in
   let modifier = Bson.add_element "vector" vector Bson.empty in
+
+  lwt top_movies_u = top_movies_by_user rating_db user movie_htbl in
+  let top_movies =
+    (let module M = Bson_ext.Bson_ext_list (Graph.User.Bson_ext_top_movie) in M.to_bson) top_movies_u
+  in
+  let modifier = Bson.add_element "top_movies" top_movies modifier in
+
   lwt _ = User_db.update ~modifier user in
 
   Lwt.return  ();
