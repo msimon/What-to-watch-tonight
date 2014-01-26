@@ -171,7 +171,6 @@ let top_movies_by_user rating_db user movie_htbl =
   let (heap_inserted,wakener) = Lwt.task () in
   let hash_size = ref (Hashtbl.length movie_htbl) in
 
-  Balsa_log.debug "Hash_size start at %d" !hash_size;
   Hashtbl.iter (
     fun key movie ->
       let gs = movie.Graph.Movie.genres in
@@ -201,10 +200,10 @@ let top_movies_by_user rating_db user movie_htbl =
       );
   ) movie_htbl;
 
-  Balsa_log.debug "Going in sleep mode, waiting to be wakened";
+  Balsa_log.info "Going in sleep mode, waiting to be wakened";
   (* this part of the code will wait for the wakener to be wakened up *)
   lwt _ = heap_inserted in
-  Balsa_log.debug "The sleeping time is over!";
+  Balsa_log.info "The sleeping time is over!";
 
   let top_movies = Hashtbl.fold (
       fun key heap acc ->
@@ -231,16 +230,12 @@ let top_movies_by_user rating_db user movie_htbl =
           ) [] heap
         in
 
-        Balsa_log.debug "movie_list is %d || heap len is %d" (List.length movie_list) (Max_heap.size heap);
-
         {
           Graph.User.genre_info = genre_info;
           movie_list = List.rev movie_list ;
         }::acc
     ) heap_htbl []
   in
-
-  Balsa_log.debug "Top movies have been extracted!";
 
   let l = List.sort (
       fun v1 v2 ->
@@ -256,7 +251,7 @@ let top_movies_by_user rating_db user movie_htbl =
     ) top_movies
   in
 
-  Balsa_log.debug "Top movies have been sorted";
+  Balsa_log.info "Top movies have been sorted";
 
   Lwt.return l
 
