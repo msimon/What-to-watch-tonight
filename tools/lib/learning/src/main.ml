@@ -200,10 +200,8 @@ let top_movies_by_user rating_db user movie_htbl =
       );
   ) movie_htbl;
 
-  Balsa_log.info "Going in sleep mode, waiting to be wakened";
   (* this part of the code will wait for the wakener to be wakened up *)
   lwt _ = heap_inserted in
-  Balsa_log.info "The sleeping time is over!";
 
   let top_movies = Hashtbl.fold (
       fun key heap acc ->
@@ -250,8 +248,6 @@ let top_movies_by_user rating_db user movie_htbl =
             compare g2.Graph.User.weight g1.Graph.User.weight
     ) top_movies
   in
-
-  Balsa_log.info "Top movies have been sorted";
 
   Lwt.return l
 
@@ -510,6 +506,7 @@ let batch config user_db movie_db genre_db rating_db =
     gradient_descent ();
 
     Balsa_log.info "Updating movies' vector";
+
     (* update user and movie vector in db *)
     let movies_update = Hashtbl.fold (
         fun key v acc ->
@@ -519,13 +516,31 @@ let batch config user_db movie_db genre_db rating_db =
           (Movie_db.update ~modifier v)::acc
       ) movie_htbl []
     in
-    lwt _ = Lwt_list.iter_p (fun m -> lwt _ = m in Lwt.return_unit) movies_update in
+
+    let m_nb = ref 0 in
+    let m_len = List.length movies_update in
+
+    lwt _ =
+      Lwt_list.iter_p (
+        fun m ->
+          lwt _ = m in
+
+          incr (m_nb);
+          if (!m_nb mod 100) = 0 then
+            Balsa_log.info "process %d on %d movies' vector" !m_nb m_len;
+
+          Lwt.return_unit
+      ) movies_update
+    in
 
     Balsa_log.info "Updating users' vector";
     let users_values = Hashtbl.fold (
         fun key v acc -> v::acc
       ) user_htbl []
     in
+
+    let u_nb = ref 0 in
+    let len = List.length users_values in
 
     Lwt_list.iter_p (
       fun u ->
@@ -538,7 +553,13 @@ let batch config user_db movie_db genre_db rating_db =
         in
         let modifier = Bson.add_element "top_movies" top_movies modifier in
 
-        User_db.update ~modifier u
+        lwt _ = User_db.update ~modifier u in
+        incr(u_nb);
+
+        if (!u_nb mod 10) = 0 then
+          Balsa_log.info "process %d on %d users vector" !u_nb len;
+
+        Lwt.return ()
     ) users_values
   in
 
