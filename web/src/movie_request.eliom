@@ -199,7 +199,41 @@ let search prefix =
 
 
 let what_to_watch u_uid_opt =
-  let _suggestion () = () in
+  let suggestion u =
+    let open Graph.User in
+
+    let movies_query m_l =
+      let m_l = List.map (
+          fun m_uid ->
+            let uid_el = (Bson.create_int64 (Int64.of_int (Graph.Uid.get_value m_uid))) in
+
+            Bson.create_doc_element (Bson.add_element "uid" uid_el Bson.empty)
+        ) m_l
+      in
+
+      let query = Bson.add_element "$or" (Bson.create_list m_l) Bson.empty in
+      Db.Movie.query ~full:true query
+    in
+
+    lwt l = Lwt_list.map_s (
+        fun t ->
+          lwt g =
+            match t.genre_info with
+              | Some gi ->
+                lwt g = Db.Genre.find gi.genre_uid in
+                lwt g_client = Genre_request.to_client g in
+                Lwt.return (Some g_client)
+              | None -> Lwt.return None
+          in
+          (* fetch movie from db *)
+          lwt m_l = movies_query t.movie_list in
+          lwt m_l = list_to_client m_l in
+          Lwt.return (g,m_l);
+      ) u.top_movies
+    in
+
+    Lwt.return l
+  in
 
   let movie_genre () =
     let rec build_paralel_query acc =
@@ -246,7 +280,7 @@ let what_to_watch u_uid_opt =
       fun (g,m_l) ->
         lwt g = Genre_request.to_client g in
         lwt m_l = list_to_client m_l in
-        Lwt.return (g,m_l)
+        Lwt.return (Some g,m_l)
     ) l in
 
     Lwt.return l
@@ -256,10 +290,12 @@ let what_to_watch u_uid_opt =
     | Some u_uid ->
       lwt u = Db.User.find u_uid in
       let rating_nb = List.length u.Graph.User.ratings in
-      if rating_nb < Balsa_config.get_int "minimum_rating_for_suggestion" then
-        (* load movie by genres since user didn't rate enough movie *)
-        movie_genre ()
+      let has_top = List.length u.Graph.User.top_movies != 0 in
+
+      if rating_nb >= Balsa_config.get_int "minimum_rating_for_suggestion" && has_top then
+        suggestion u
       else
-        movie_genre () (* to replace by suggestion *)
+        (* load movie by genres since user didn't rate enough movie or it's top movie are not ready *)
+        movie_genre ()
     | None ->
       movie_genre ()

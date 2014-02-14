@@ -20,7 +20,6 @@
 
   let dom _ _ =
     lwt res = %what_to_watch () in
-
     let container = div [] in
 
     List.iter (
@@ -115,14 +114,22 @@
             Lwt.cancel !slide_thread
           );
 
-
+        let genre_title =
+          Balsa_option.case (
+            fun g ->
+              pcdata g.Genre_request.name
+          ) (fun _ ->
+              pcdata "Best"
+            ) genre
+        in
         let d = div ~a:[ a_class [ "genre_movie_list" ] ] [
-            h2 [ pcdata genre.Genre_request.name ];
+            h2 [ genre_title ];
             movie_list_container ;
           ]
         in
 
         Manip.appendChild container d
+
     ) res ;
 
     Lwt.return [container]

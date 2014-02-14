@@ -99,8 +99,8 @@ struct
         lwt mongo = mongo in
 
         (* get the last uid, and set it in Uid.uid *)
-        let q = MongoMetaOp.orderBy (Bson.add_element M.uid_field (Bson.create_int32 (-1l)) Bson.empty) Bson.empty in
-        let s = Bson.add_element M.uid_field (Bson.create_int32 1l) Bson.empty in
+        let q = MongoMetaOp.orderBy (Bson.add_element M.uid_field (Bson.create_int64 (-1L)) Bson.empty) Bson.empty in
+        let s = Bson.add_element M.uid_field (Bson.create_int64 1L) Bson.empty in
 
         lwt r = Mongo_lwt.find_q_s_one mongo q s in
 
