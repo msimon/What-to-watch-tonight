@@ -114,7 +114,7 @@
     try_lwt begin
       match_lwt Balsa_facebook.login ~perms:(Balsa_config.get_string "facebook.perms") with
         | Some s ->
-          let fb_id =  Js.to_string s##userID in
+          let fb_id = Js.to_string s##userID in
           let access_token = Js.to_string s##accessToken in
           lwt u = %facebook_sign_in (fb_id,access_token) in
           connect (Some u);

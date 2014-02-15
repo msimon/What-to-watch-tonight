@@ -75,12 +75,6 @@
                 ];
                 span ~a:[ a_class ["vertical_sep"]] []
               ];
-              li [
-                Path.a ~service:Path.Taste_profile ~a:[ a_class (selected Path.Taste_profile) ] [
-                  pcdata "Taste Profile"
-                ];
-                span ~a:[ a_class ["vertical_sep"]] []
-              ];
             ];
         ) Path.service
       )

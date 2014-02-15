@@ -198,7 +198,7 @@ let search prefix =
   list_to_client ml
 
 
-let what_to_watch u_uid_opt =
+let what_to_watch u_uid_opt top_from top_to =
   let suggestion u =
     let open Graph.User in
 
@@ -215,6 +215,16 @@ let what_to_watch u_uid_opt =
       Db.Movie.query ~full:true query
     in
 
+    (* removing genre with less than 10 movies *)
+    let top_movies =
+      List.filter (
+        fun m -> List.length m.movie_list > 10
+      ) u.top_movies
+    in
+
+    (* only getting part some of the genres *)
+    let top_movies = Balsa_list.take_from top_from top_to top_movies in
+
     lwt l = Lwt_list.map_s (
         fun t ->
           lwt g =
@@ -229,7 +239,7 @@ let what_to_watch u_uid_opt =
           lwt m_l = movies_query t.movie_list in
           lwt m_l = list_to_client m_l in
           Lwt.return (g,m_l);
-      ) u.top_movies
+      ) top_movies
     in
 
     Lwt.return l
@@ -273,6 +283,8 @@ let what_to_watch u_uid_opt =
     in
 
     lwt genres = Db.Genre.query ~full:true Bson.empty in
+
+    let genres = Balsa_list.take_from top_from top_to genres in
     let queries = build_paralel_query [] genres in
 
     lwt l = read_queries [] queries in
