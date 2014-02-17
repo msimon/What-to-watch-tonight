@@ -134,7 +134,9 @@
       end
 
   let logout () =
-    Balsa_facebook.logout ();
+    (try
+      Balsa_facebook.logout ();
+    with _ -> ());
     Lwt.async (fun _ -> %logout ());
     connect (None);
 
