@@ -7,7 +7,7 @@
     original_title : string option ;
     overview : string option ;
     poster_path : string option ;
-    release_date: string ;
+    release_date: int option ;
     tagline : string option ;
     vote_average : float ;
     vote_count : int ;

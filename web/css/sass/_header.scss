@@ -177,13 +177,13 @@
       @media (min-width: #{$optimal-width}px) {
         width: 48%;
         ul li {
-          width: 26%;
+          width: 38%;
         }
       }
       @media (max-width: #{$optimal-width}px) {
-        width: 35%;
+        width: 33%;
         ul li {
-          width: 21%;
+          width: 40%;
         }
       }
     }

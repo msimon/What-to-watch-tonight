@@ -80,7 +80,7 @@
       )
     in
 
-    let movie_search  =
+    let movie_search =
       let handle_confirmation_selected m =
         Path.goto (Path.Movie m.Movie_request.uid)
       in
@@ -89,7 +89,15 @@
         Balsa_log.debug "go to search page: %s" s
       in
 
-      let create_suggestion_li m = [ pcdata m.Movie_request.title ],[] in
+      let string_of_value m =
+        match m.Movie_request.release_date with
+          | Some d ->
+            Printf.sprintf "%s (%d)" m.Movie_request.title d
+          | None ->
+            Printf.sprintf "%s" m.Movie_request.title
+      in
+
+      let create_suggestion_li m = [ pcdata (string_of_value m) ],[] in
 
       Balsa_autocomplete.create
         ~handle_confirmation_selected
@@ -100,7 +108,7 @@
         ~display_no_result:(pcdata "No result")
         ~placeholder:"Search for movies"
         ~a:[ a_class ["search"]]
-        ~string_of_value:(fun m -> m.Movie_request.title)
+        ~string_of_value
         ()
     in
 

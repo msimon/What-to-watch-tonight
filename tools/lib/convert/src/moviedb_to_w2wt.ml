@@ -103,6 +103,20 @@ let movie config u genre_db movie_db rating_db =
 
                     lwt _ = Rating_db.insert rating in
 
+                    let release_date =
+                      if (m.Api.Movie.release_date != "") then begin
+                        Some (int_of_string (String.sub m.Api.Movie.release_date 0 4))
+                      end else None
+                    in
+
+                    let tagline =
+                      Balsa_option.bind (
+                        fun t ->
+                          if t = "" then None
+                          else Some t
+                      ) m.Api.Movie.tagline
+                    in
+
                     Lwt.return ({
                         Graph.Movie.uid = movie_uid ;
                         title = m.Api.Movie.title ;
@@ -112,8 +126,8 @@ let movie config u genre_db movie_db rating_db =
                           else Some m.Api.Movie.original_title ;
                         overview = m.Api.Movie.overview ;
                         poster_path = m.Api.Movie.poster_path ;
-                        release_date = m.Api.Movie.release_date ;
-                        tagline = m.Api.Movie.tagline ;
+                        release_date ;
+                        tagline ;
                         vote_average = float_of_int (rating.Graph.Rating.rating) ;
                         vote_count = 1 (* m.Api.Movie.vote_count *) ;
                         genres ;

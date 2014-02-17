@@ -120,7 +120,7 @@
 
   (*** RATING STARS **)
 
-  let rating_dom ?lazy_ev movie =
+  let rating_dom ?lazy_ev ?(t=`Normal) movie =
     let m_uid = movie.Movie_request.uid in
     let rating,update_rating = S.create (`Rating 0) in
     let over_rating,update_over_rating = S.create None in
@@ -209,23 +209,43 @@
       )
     in
 
-    let container =
-      div ~a:[ a_class ["ratings_container"; "clearfix"]; a_onmouseout (fun _ -> update_over_rating None) ] []
-    in
+    let star_container = div ~a:[ a_class ["rating"; "clearfix"]] [] in
 
     begin match lazy_ev with
       | Some e ->
         E.iter (
           fun _ ->
             fetch_rating ();
-            Manip.replaceAllChild container [ rating_stars (); rating_txt () ]
-        )(E.once e)
+            Manip.replaceAllChild star_container [ rating_stars (); rating_txt () ]
+        ) (E.once e)
       | None ->
         fetch_rating ();
-        Manip.replaceAllChild container [ rating_stars (); rating_txt () ]
+        Manip.replaceAllChild star_container [ rating_stars (); rating_txt () ]
     end;
 
-    container
+    R.node (
+      S.map (
+        fun r ->
+          match r,t with
+            | `Average, _ | _, `Normal ->
+              div ~a:[ a_class ["ratings_container"; "clearfix"];
+                       a_onmouseout (fun _ -> update_over_rating None) ] [
+                star_container
+              ]
+            | _ ->
+              div ~a:[ a_class ["ratings_container"; "clearfix"];
+                       a_onmouseout (fun _ -> update_over_rating None) ] [
+                star_container;
+                div ~a:[ a_class [ "vote_average" ] ] [
+                  p [
+                    pcdata (Printf.sprintf "Average of %d ratings: %.1f stars"
+                              movie.Movie_request.vote_count
+                              movie.Movie_request.vote_average)
+                  ]
+                ]
+              ]
+      ) rating
+    )
 
   (*** MOVIE LIST ELEMENT **)
 

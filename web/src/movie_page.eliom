@@ -28,38 +28,34 @@
     lwt m = %fetch_movie m_uid in
 
     let pict_dom =
-      match m.Movie_request.poster_path with
-        | Some src -> Img_gen.movie_cover ~alt:m.title ~size:`W342 ~src ()
-        | None -> Img_gen.default_movie_img ~alt:m.title ()
+      div ~a:[ a_class ["pict_dom"]] [
+        match m.Movie_request.poster_path with
+          | Some src -> Img_gen.movie_cover ~alt:m.title ~size:`W342 ~src ()
+          | None -> Img_gen.default_movie_img ~alt:m.title ()
+      ]
     in
 
     let desc_dom =
       let tagline =
         Balsa_option.default_f
-          (fun tagline -> p [ pcdata tagline ])
+          (fun tagline -> p ~a:[ a_class ["tagline"]] [ pcdata tagline ])
           (p ~a:[a_style "display_none"] []) m.tagline
       in
       let overview =
         Balsa_option.default_f
-          (fun overview -> p [ pcdata overview ])
+          (fun overview -> p ~a:[ a_class ["overview"]] [ pcdata overview ])
           (p ~a:[a_style "display_none"] []) m.overview
       in
 
-      div [
-        h1 [ pcdata m.title ];
-        Dom_gen.rating_dom m ;
+      div ~a:[ a_class ["description_dom"]] [
         div [
-          div [
-            span [
-              pcdata (
-                Printf.sprintf "Average of %d rating%s %.1f stars"
-                  m.vote_count
-                  (if m.vote_count > 1 then "s" else "")
-                  m.vote_average
-              )
-            ]
+          h1 ~a:[ a_style (match m.tagline with | Some t -> "margin-bottom:0" | None -> "")] [
+            pcdata m.title
           ];
           tagline ;
+        ];
+        Dom_gen.rating_dom ~t:`Extended m ;
+        div [
           overview ;
         ]
       ]
@@ -79,7 +75,7 @@
           | _ -> false
 
       let dom = dom
-      let classes = [ "movie_page" ]
+      let classes = [ "movie_page"; "clearfix" ]
     end)
 
 }}
