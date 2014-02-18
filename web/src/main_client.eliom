@@ -21,6 +21,7 @@
           div ~a:[ a_class ["fixed_header_hide"]] [];
           Header.header () ;
           Dom_gen.missing_rating_popup ();
+          Dom_gen.connect_required_popup ();
           container;
         ]);
       Path.init ();

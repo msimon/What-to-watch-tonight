@@ -57,6 +57,8 @@
 
   (*** MISSING RATINGS INFO POPUP **)
 
+  let connect_required, connect_required_u : ([ `Display | `Hide ] as 'a) React.signal * ('a -> unit) =
+    Balsa_react.S.create `Hide
   let missing_rating, missing_rating_u = Balsa_react.S.create None
   let add_missing_rating m_uid =
     match S.value missing_rating with
@@ -77,7 +79,8 @@
                   missing_rating_u ratings ;
                   Lwt.return_unit
               )
-            | None -> ()
+            | None ->
+              missing_rating_u None;
         ) Connection.connected;
     ) (E.once Path.init_aux)
 
@@ -87,7 +90,7 @@
       S.map (
         function
           | Some ratings when (List.length ratings) < min_rate ->
-            div ~a:[ a_class ["missing_cover"]] [
+            div ~a:[ a_class ["small_info_popup"]] [
               div [
                 p [
                   span ~a:[ a_class ["number"]] [ pcdata (string_of_int (min_rate - (List.length ratings))) ];
@@ -97,7 +100,7 @@
             ]
           | Some ratings when (List.length ratings) = min_rate ->
             let d =
-              div ~a:[ a_class ["missing_cover"]] [
+              div ~a:[ a_class ["small_info_popup"]] [
                 div [
                   p [
                     span [ pcdata "Your taste profile is being build. We will soon display you personalized recommendations" ];
@@ -117,6 +120,28 @@
             div ~a:[ a_style "display:none" ] []
       ) missing_rating
     )
+
+  let connect_required_popup () =
+    let st = S.map (
+        function
+          | `Display ->
+            Lwt.async (fun _ ->
+                lwt _ = Lwt_js.sleep 5. in
+                connect_required_u `Hide;
+                Lwt.return_unit
+              );
+            "display:block"
+          | _ -> "display:none"
+      ) connect_required
+    in
+
+    div ~a:[ a_class [ "small_info_popup" ]; R.a_style st ] [
+      div [
+        p [
+          span [ pcdata "Login is required for this action" ];
+        ]
+      ]
+    ]
 
   (*** RATING STARS **)
 
@@ -147,10 +172,15 @@
             let onclick n =
               a_onclick (
                 fun _ ->
-                  update_rating (`Rating n);
-                  Lwt.async (fun _ -> %rate (m_uid,n));
-                  add_missing_rating m_uid ;
-                  raise Eliom_lib.False
+                  match S.value Connection.connected with
+                    | Some _ ->
+                      update_rating (`Rating n);
+                      Lwt.async (fun _ -> %rate (m_uid,n));
+                      add_missing_rating m_uid ;
+                      raise Eliom_lib.False
+                    | None ->
+                      connect_required_u `Display;
+                      raise Eliom_lib.False
               )
             in
             let rating_classes, rating_style =
