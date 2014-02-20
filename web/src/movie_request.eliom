@@ -160,20 +160,28 @@ let rate : Graph.Movie.key -> Graph.User.key -> int -> unit Lwt.t =
 
     lwt u = Db.User.find u_uid in
     let rating_nb = List.length u.Graph.User.ratings in
-    lwt _ =
-      if rating_nb = Balsa_config.get_int "minimum_rating_for_suggestion" then begin
-        Balsa_log.warning "Starting learning for user %d\n" (Graph.Uid.get_value u_uid);
-        let config = Config.web_to_tools () in
-        let (user_db,movie_db,genre_db,rating_db) = Db.as_value () in
-        lwt _ = Learning.Main.batch_user config genre_db movie_db user_db rating_db u_uid in
-        Balsa_log.warning "Finished learning for user %d\n" (Graph.Uid.get_value u_uid);
-        Lwt.return_unit
-      end else
-        Lwt.return_unit
+
+    let detach_computation () =
+      Lwt.async (
+        fun _ ->
+          Lwt_preemptive.detach (
+            fun _ ->
+              Balsa_log.warning "Starting learning for user %d\n" (Graph.Uid.get_value u_uid);
+              let config = Config.web_to_tools () in
+              let (user_db,movie_db,genre_db,rating_db) = Db.as_value () in
+              Lwt.async (
+                fun _ ->
+                  Learning.Main.batch_user config genre_db movie_db user_db rating_db u_uid
+              );
+              Balsa_log.warning "Finished learning for user %d\n" (Graph.Uid.get_value u_uid)
+          ) ()
+      )
     in
 
-    Lwt.return_unit
+    if rating_nb = Balsa_config.get_int "minimum_rating_for_suggestion" then
+      detach_computation ();
 
+    Lwt.return_unit
 
 let search prefix =
   (* read http://docs.mongodb.org/manual/reference/operator/regex/ before changing regexp.
