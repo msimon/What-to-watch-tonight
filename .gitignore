@@ -28,3 +28,4 @@ tools/*.txt
 
 web/css/css/w2wt.css
 web/public/w2wt.css
+web/config.json

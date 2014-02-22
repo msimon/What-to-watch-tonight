@@ -134,6 +134,9 @@
         width: #{$cover_width}px;
         height: #{$cover_height}px;
         overflow: hidden ;
+        img {
+          width: 100%;
+        }
       }
 
       > div.movie_info {
