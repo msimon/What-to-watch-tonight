@@ -7,6 +7,9 @@ sig
   type key deriving (Bson_ext)
   type uid_typ
 
+  (* debug  *)
+  val uid_to_int : key -> int
+
   (* forbiden_update value can only be updated with a $set *)
   val forbiden_update : string list
 
@@ -51,7 +54,7 @@ module type Sig = sig
   val update: ?modifier:Bson.t -> t -> unit Lwt.t
   val delete: t -> unit Lwt.t
 
-  val find_and_update: key -> (t -> t) -> t Lwt.t
+  val find_and_update: ?modifier:Bson.t -> key -> (t -> t) -> t Lwt.t
 
   val count : ?skip: int -> ?limit: int -> ?query:Bson.t -> unit -> int Lwt.t
 
@@ -98,6 +101,8 @@ struct
       fun _ ->
         lwt mongo = mongo in
 
+        Balsa_log.info "connecting to db %s" M.collection ;
+
         (* get the last uid, and set it in Uid.uid *)
         let q = MongoMetaOp.orderBy (Bson.add_element M.uid_field (Bson.create_int64 (-1L)) Bson.empty) Bson.empty in
         let s = Bson.add_element M.uid_field (Bson.create_int64 1L) Bson.empty in
@@ -126,6 +131,7 @@ struct
 
 
   let find_in_db key =
+    Balsa_log.warning "cache miss for %d in %s" (M.uid_to_int key) M.collection;
     lwt mongo = mongo in
     let bson_search = M.search key in
 
@@ -240,7 +246,9 @@ struct
     lwt _ = Mongo_lwt.update_one mongo ((M.search (M.key t)), modifier) in
 
     cache#remove (M.key t) ;
+    Balsa_log.info "remove cache for %d in %s" (M.uid_to_int (M.key t)) M.collection;
     cache#add (M.key t) t;
+    Balsa_log.info "add cache for %d in %s" (M.uid_to_int (M.key t)) M.collection;
 
     Lwt.return_unit
 
@@ -254,17 +262,27 @@ struct
     Lwt.return_unit
 
 
+  (* TODO to update to have mutex by ids *)
   (* This function assure that the data in DB will not be modify by another thread,
      between the find and the update
   *)
   let find_and_update =
-    let mutex = Lwt_mutex.create () in
-    (fun key update_fun ->
+    let hm = Hashtbl.create 100 in
+    let get_mutex key =
+      try
+        Hashtbl.find hm key
+      with Not_found ->
+        let mutex = Lwt_mutex.create () in
+        Hashtbl.add hm key mutex;
+        mutex
+    in
+    (fun ?modifier key update_fun ->
+       let mutex = get_mutex key in
        lwt _ = Lwt_mutex.lock mutex in
        lwt d = find key in
        try_lwt
          let d = update_fun d in
-         lwt _ = update d in
+         lwt _ = update ?modifier d in
          Lwt_mutex.unlock mutex;
          Lwt.return d
        with

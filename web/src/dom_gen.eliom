@@ -29,6 +29,9 @@
                     lwt m = Db.Movie.find m_uid in
                     try_lwt
                       let pr = Learning.Main.predicted_rating u m in
+                      (* contain the result between 0 and 5, todo check algorithm *)
+                      let pr = max pr 0. in
+                      let pr = min pr 5. in
                       Lwt.return (`Predicted pr)
                     with _ ->
                       Lwt.return `Average
@@ -200,7 +203,7 @@
                   [ "ratings"; "average" ], (Printf.sprintf "width:%.1f%%" (movie.Movie_request.vote_average *. 19.42))
             in
 
-            div ~a:[ a_class ["ratings_stars"]] [
+            div ~a:[ a_class ["ratings_stars"]; a_onmouseout (fun _ -> update_over_rating None) ] [
               div ~a:[ a_class ["ratings" ] ] [
               ];
               div ~a:[ a_class rating_classes; a_style rating_style ] [

@@ -513,7 +513,17 @@ let batch config user_db movie_db genre_db rating_db =
           let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) v.Graph.Movie.vector in
           let modifier = Bson.add_element "vector" vector Bson.empty in
 
-          (Movie_db.update ~modifier v)::acc
+          let update =
+            Movie_db.find_and_update ~modifier v.Graph.Movie.uid (
+              fun m ->
+                {
+                  m with
+                    Graph.Movie.vector = v.Graph.Movie.vector;
+                }
+            )
+          in
+
+          update::acc
       ) movie_htbl []
     in
 
@@ -553,7 +563,16 @@ let batch config user_db movie_db genre_db rating_db =
         in
         let modifier = Bson.add_element "top_movies" top_movies modifier in
 
-        lwt _ = User_db.update ~modifier u in
+        lwt _ =
+          User_db.find_and_update ~modifier u.Graph.User.uid (
+            fun user ->
+              {
+                user with
+                  Graph.User.top_movies = top_movies_u;
+                  vector = u.Graph.User.vector;
+              }
+          )
+        in
         incr(u_nb);
 
         if (!u_nb mod 10) = 0 then
@@ -710,7 +729,15 @@ let batch_user config genre_db movie_db user_db rating_db user_uid =
   in
   let modifier = Bson.add_element "top_movies" top_movies modifier in
 
-  lwt _ = User_db.update ~modifier user in
-
+  lwt _ =
+    User_db.find_and_update ~modifier user.Graph.User.uid (
+      fun u ->
+        {
+          u with
+            Graph.User.top_movies = top_movies_u;
+            vector = user.Graph.User.vector;
+        }
+    )
+  in
   Balsa_log.info "User %d has been updated" (Graph.Uid.get_value (user.Graph.User.uid));
-  Lwt.return  ();
+  Lwt.return_unit

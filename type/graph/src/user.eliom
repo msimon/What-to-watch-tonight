@@ -51,3 +51,6 @@ let indexes () =
 
 let bson_uid (key : Uid.user Uid.uid) =
   Bson.create_int64 (Int64.of_int (Uid.get_value key))
+
+
+let uid_to_int = Uid.get_value

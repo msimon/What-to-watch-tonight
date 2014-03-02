@@ -5,7 +5,7 @@ let read_params () =
     Balsa_log.error "%s argument required" Sys.argv.(0);
     Balsa_log.info "Usage:\n-rd : drop and reload all movies. Takes approx 2 days\n-c or --complete: load new movies into db\n-rf or --retry: try to reaload all missing id\n-g or --genres: relaod only the genres list%!";
     exit 0
-  end else if Array.length (Sys.argv) > 2 then begin
+  end else if Array.length (Sys.argv) > 3 then begin
     Balsa_log.error "Only one argument at a time!";
     exit 0
   end else begin
