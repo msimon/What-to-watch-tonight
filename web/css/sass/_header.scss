@@ -60,6 +60,8 @@
             padding-right: 20px;
           }
           > ul {
+            max-height: 300px;
+            overflow: auto;
             position: absolute ;
             width: 256px;
             background-color: $body_grey_alpha();

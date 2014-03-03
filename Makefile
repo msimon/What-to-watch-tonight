@@ -34,7 +34,7 @@ graph:
 
 sass:
 	@compass compile ./web/css
-	@cp -r ./web/css/css/ ./web/public
+	@cp -r ./web/css/css/* ./web/public
 
 clean:
 	@rm -rf ./_build
