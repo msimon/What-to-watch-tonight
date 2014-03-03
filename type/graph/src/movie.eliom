@@ -15,6 +15,7 @@
     genres : Uid.genre Uid.uid list ;
     vector : Param.t list ;
     imdb_uid: int ;
+    last_time_fetch: int option ;
   } deriving (Bson_ext)
 }}
 
@@ -47,3 +48,9 @@ let bson_uid (key : key) =
   Bson.create_int64 (Int64.of_int (Uid.get_value key))
 
 let uid_to_int = Uid.get_value
+
+let get_last_time_fetch t = t.last_time_fetch
+let set_last_time_fetch t d = {
+  t with
+    last_time_fetch = (Some d)
+}

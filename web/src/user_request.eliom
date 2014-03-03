@@ -76,6 +76,7 @@ let facebook_sign_in (fb_id, access_token) =
           }) ;
         vector = [];
         top_movies = [];
+        last_time_fetch = None;
       } in
 
       lwt _ = Db.User.insert u in

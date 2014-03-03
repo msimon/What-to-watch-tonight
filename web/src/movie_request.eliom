@@ -166,26 +166,18 @@ let rate : Graph.Movie.key -> Graph.User.key -> int -> unit Lwt.t =
         fun _ ->
           Lwt_preemptive.detach (
             fun _ ->
-              Balsa_log.warning "Starting learning for user %d\n" (Graph.Uid.get_value u_uid);
               let config = Config.web_to_tools () in
               let (user_db,movie_db,genre_db,rating_db) = Db.as_value () in
               Lwt.async (
                 fun _ ->
                   Learning.Main.batch_user config genre_db movie_db user_db rating_db u_uid
               );
-              Balsa_log.warning "Finished learning for user %d\n" (Graph.Uid.get_value u_uid)
           ) ()
       )
     in
 
     if rating_nb = Balsa_config.get_int "minimum_rating_for_suggestion" then
       detach_computation ();
-
-    (* let (user_db,_,_,_) = Db.as_value () in *)
-    (* Lwt.async ( *)
-    (*   fun _ -> *)
-    (*     Learning.Main.test_user user_db u_uid *)
-    (* ); *)
 
     Lwt.return_unit
 
@@ -215,8 +207,6 @@ let search prefix =
 let what_to_watch u_uid_opt top_from top_to =
   let suggestion u =
     let open Graph.User in
-
-    Balsa_log.debug "in suggestion";
 
     let movies_query m_l =
       let m_l = List.map (
@@ -262,7 +252,6 @@ let what_to_watch u_uid_opt top_from top_to =
   in
 
   let movie_genre () =
-    Balsa_log.debug "in movie_genre";
     let rec build_paralel_query acc =
       function
         | [] -> acc
@@ -320,8 +309,6 @@ let what_to_watch u_uid_opt top_from top_to =
       lwt u = Db.User.find u_uid in
       let rating_nb = List.length u.Graph.User.ratings in
       let has_top = List.length u.Graph.User.top_movies != 0 in
-
-      Balsa_log.debug "has_top = %b && rating_nb = %d on %d " has_top rating_nb (Balsa_config.get_int "minimum_rating_for_suggestion");
 
       if rating_nb >= Balsa_config.get_int "minimum_rating_for_suggestion" && has_top then
         suggestion u

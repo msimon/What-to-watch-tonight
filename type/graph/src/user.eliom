@@ -24,6 +24,7 @@
     facebook: facebook option ;
     vector: Param.t list ;
     top_movies: top_movie list ;
+    last_time_fetch: int option ;
   } deriving (Bson_ext)
 }}
 
@@ -54,3 +55,9 @@ let bson_uid (key : Uid.user Uid.uid) =
 
 
 let uid_to_int = Uid.get_value
+
+let get_last_time_fetch t = t.last_time_fetch
+let set_last_time_fetch t d = {
+  t with
+    last_time_fetch = (Some d)
+}

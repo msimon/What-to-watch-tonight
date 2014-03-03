@@ -133,6 +133,7 @@ let movie config u genre_db movie_db rating_db =
                         genres ;
                         vector = [] ;
                         imdb_uid = m.Api.Movie.id;
+                        last_time_fetch = None;
                       }::acc)
 
               with _ ->
@@ -226,6 +227,7 @@ let user config user_db =
           ratings = [] ;
           vector = [] ;
           top_movies = [];
+          last_time_fetch = None;
         } in
 
         lwt _ = User_db.insert moviedb_user in

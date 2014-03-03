@@ -84,6 +84,7 @@ let create_new_user () =
       } ;
     vector = [];
     top_movies = [];
+    last_time_fetch = None;
   }
   in
 

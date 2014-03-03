@@ -26,6 +26,9 @@ sig
   *)
   val indexes: unit -> (string list * (Mongo_lwt.index_option list)) list
 
+  val get_last_time_fetch: t -> int option
+  val set_last_time_fetch: t -> int -> t
+
 end
 
 module type C =
@@ -57,6 +60,8 @@ module type Sig = sig
   val find_and_update: ?modifier:Bson.t -> key -> (t -> t) -> t Lwt.t
 
   val count : ?skip: int -> ?limit: int -> ?query:Bson.t -> unit -> int Lwt.t
+
+  val destory : unit -> unit Lwt.t
 
 end
 
@@ -131,7 +136,6 @@ struct
 
 
   let find_in_db key =
-    Balsa_log.warning "cache miss for %d in %s" (M.uid_to_int key) M.collection;
     lwt mongo = mongo in
     let bson_search = M.search key in
 
@@ -142,12 +146,28 @@ struct
       | h::_ -> h
     in
 
-    Lwt.return (Bson_utils_t.from_bson d)
+    let t = Bson_utils_t.from_bson d in
+    let t = M.set_last_time_fetch t (int_of_float (Unix.time ())) in
+    Lwt.return t
 
   let cache = new Cache.cache find_in_db ~timer:C.cache_lifetime C.cache_size
 
   let find key =
-    cache#find key
+    let reload () =
+      Balsa_log.debug "reloading cache for %d in %s" (M.uid_to_int key) (M.collection);
+      cache#remove key;
+      cache#find key
+    in
+    lwt t = cache#find key in
+    match M.get_last_time_fetch t with
+      | Some n ->
+        let time = int_of_float (Unix.time ()) in
+        let sixh = 21600 (* 6hours*) in
+        (* check if the user has been load from the db in the last 6h *)
+        if (time > (n + sixh)) then reload ()
+        else Lwt.return t
+      | None -> Lwt.return t
+
 
   let query_one_no_cache bson_t =
     lwt mongo = mongo in
@@ -246,9 +266,7 @@ struct
     lwt _ = Mongo_lwt.update_one mongo ((M.search (M.key t)), modifier) in
 
     cache#remove (M.key t) ;
-    Balsa_log.info "remove cache for %d in %s" (M.uid_to_int (M.key t)) M.collection;
     cache#add (M.key t) t;
-    Balsa_log.info "add cache for %d in %s" (M.uid_to_int (M.key t)) M.collection;
 
     Lwt.return_unit
 
@@ -262,7 +280,6 @@ struct
     Lwt.return_unit
 
 
-  (* TODO to update to have mutex by ids *)
   (* This function assure that the data in DB will not be modify by another thread,
      between the find and the update
   *)
@@ -294,6 +311,10 @@ struct
   let count ?skip ?limit ?query () =
     lwt mongo = mongo in
     Mongo_lwt.count ?skip ?limit ?query mongo
+
+  let destory () =
+    lwt mongo = mongo in
+    Mongo_lwt.destory mongo
 
 end
 

@@ -27,3 +27,6 @@ let bson_uid (key : key) =
   Bson.create_int64 (Int64.of_int (Uid.get_value key))
 
 let uid_to_int = Uid.get_value
+
+let get_last_time_fetch _ = None
+let set_last_time_fetch t _ = t

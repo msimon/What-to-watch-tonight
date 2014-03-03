@@ -515,8 +515,7 @@ let batch config user_db movie_db genre_db rating_db =
 
           let update =
             Movie_db.find_and_update ~modifier v.Graph.Movie.uid (
-              fun m ->
-                {
+              fun m -> {
                   m with
                     Graph.Movie.vector = v.Graph.Movie.vector;
                 }
@@ -552,7 +551,8 @@ let batch config user_db movie_db genre_db rating_db =
     let u_nb = ref 0 in
     let len = List.length users_values in
 
-    Lwt_list.iter_p (
+    (* we need to keep this syncronous, or we may explod the memory *)
+    Lwt_list.iter_s (
       fun u ->
         let vector = (let module M = Bson_ext.Bson_ext_list (Graph.Param.Bson_ext_t) in M.to_bson) u.Graph.User.vector in
         let modifier = Bson.add_element "vector" vector Bson.empty in

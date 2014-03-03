@@ -34,6 +34,12 @@ let run () =
   lwt _ = Convert.Moviedb_to_w2wt.convert config user_db movie_db genre_db rating_db in
   Balsa_log.info "Start learning";
   lwt _ = Learning.Main.batch config user_db movie_db genre_db rating_db in
+
+  lwt _ = Db.User.destory () in
+  lwt _ = Db.Movie.destory () in
+  lwt _ = Db.Genre.destory () in
+  lwt _ = Db.Rating.destory () in
+
   Lwt.return_unit
 
 let _ =
