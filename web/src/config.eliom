@@ -115,6 +115,11 @@ let web_to_tools () =
     sleep_time = 0.;
     learning = learning;
     minimal_vote_count = Balsa_config.get_int "minimum_rating_for_suggestion";
+    debug = {
+      Config_t.display_retry_after = false;
+      display_incorrect_response = false;
+      display_correct_response = false;
+    }
   }
 
 

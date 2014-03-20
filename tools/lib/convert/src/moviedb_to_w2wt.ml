@@ -39,6 +39,35 @@ let remove_useless_word =
      ) [] l
   )
 
+let movie_update api_m w2wt_m =
+  let open Api.Movie in
+
+  let release_date =
+    if (api_m.release_date != "") then begin
+      Some (int_of_string (String.sub api_m.release_date 0 4))
+    end else None
+  in
+
+  let tagline =
+    Balsa_option.bind (
+      fun t ->
+        if t = "" then None
+        else Some t
+    ) api_m.tagline
+  in
+
+  {
+    w2wt_m with
+      Graph.Movie.title = api_m.title ;
+      Graph.Movie.title_search = remove_useless_word (split ' ' api_m.title) ;
+      Graph.Movie.original_title =
+        if api_m.title = api_m.original_title then None
+        else Some api_m.original_title ;
+      overview = api_m.overview ;
+      poster_path = api_m.poster_path ;
+      release_date = release_date;
+      tagline = tagline ;
+  }
 
 let movie config u genre_db movie_db rating_db =
   let module Genre_db = (val genre_db : Graph_server.Db.Sig with type t = Graph_server.Genre.t and type key = Graph_server.Genre.key) in

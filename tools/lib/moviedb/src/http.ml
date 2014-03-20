@@ -6,7 +6,6 @@ open Ocsigen_lib
 open Config_t
 
 exception Incorrect_response
-exception Replay_request
 
 let generate_headers headers =
   List.fold_left (
@@ -137,10 +136,15 @@ let build_url =
       Ocsigen_http_frame.Http_header.(
         match h.mode with
           | Answer i when i = 200 || i = 304 ->
+            if (config.debug.display_correct_response) then
+              Printf.printf "r: %s\n%!" s;
             Lwt.return s
           | Answer i when i = 429 ->
             let n = get_headers_value h (Http_headers.name "Retry-After") in
-            Printf.printf "retry-after : %s\n%!" n;
+
+            if (config.debug.display_retry_after) then
+              Printf.printf "retry-after : %s\n%!" n;
+
             lwt _ = Lwt_unix.sleep (float_of_string n) in
             lwt s = build_url_in ~params config ~uri in
             retry_after := !retry_after + (((int_of_string n) + 1) / config.max_connections);
@@ -148,11 +152,11 @@ let build_url =
           | Answer i when i = 404 ->
             raise Not_found
           | _ ->
-            Printf.printf "ir2: %d: %s\n%!" call_nb s;
+            if (config.debug.display_incorrect_response) then
+              Printf.printf "ir: %d: %s\n%!" call_nb s;
             raise Incorrect_response
       )
     in
-
 
     Lwt.return s
   in

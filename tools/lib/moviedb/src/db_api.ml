@@ -1,7 +1,3 @@
-type genre_list = {
-  genres : Api.Genre.t list;
-} deriving (Json_ext, Bson_ext)
-
 let fetch_moviedb_configuration config =
   lwt s = Http.build_url config ~uri:"/3/configuration" in
   Lwt.return (Api.Misc.Json_ext_movidb_configuration.from_json (Json_ext.from_string s))
@@ -13,6 +9,7 @@ let fetch_last_movie config =
 let fetch_movie_str config uid =
   Http.build_url config ~uri:(Printf.sprintf "/3/movie/%d" uid)
 
+
 let fetch_movie config uid =
   lwt s = fetch_movie_str config uid in
   let m = Api.Movie.Json_ext_t.from_json (Json_ext.from_string s) in
@@ -20,8 +17,32 @@ let fetch_movie config uid =
 
 let fetch_genres config =
   lwt s = Http.build_url config ~uri:"/3/genre/list" in
-  let g = Json_ext_genre_list.from_json (Json_ext.from_string s) in
-  Lwt.return g.genres
+  let g = Api.Genre.Json_ext_genre_list.from_json (Json_ext.from_string s) in
+  Lwt.return g.Api.Genre.genres
+
+let fetch_movie_change ?start_date ?end_date ?page config =
+  let string_of_date f =
+    let t = Unix.localtime f in
+    Printf.sprintf "%d-%d-%d" (t.Unix.tm_year + 1900) (t.Unix.tm_mon + 1) t.Unix.tm_mday
+  in
+
+  let start_date = Balsa_option.map string_of_date start_date in
+  let end_date = Balsa_option.map string_of_date end_date in
+  let page = Balsa_option.map (fun p -> string_of_int p) page in
+
+  let params =
+    List.fold_left (
+      fun acc (k,v) ->
+        Balsa_option.case (
+          fun v ->
+            (k,v)::acc
+        ) (fun _ -> acc) v
+    ) [] [ ("start_date", start_date); ("end_date", end_date); ("page", page) ]
+  in
+
+  lwt s = Http.build_url ~params config ~uri:"/3/movie/changes" in
+  let c = Api.Movie_changes.Json_ext_change_list.from_json (Json_ext.from_string s) in
+  Lwt.return c
 
 let movie_pool = ref []
 let add_movie_to_pool m = movie_pool := m::!movie_pool

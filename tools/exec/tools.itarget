@@ -3,3 +3,4 @@ convert/moviedb_to_w2wt.native
 learning/learn.native
 all/all.native
 populate/populate.native
+changes/changes.native

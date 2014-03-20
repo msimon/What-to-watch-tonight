@@ -5,7 +5,7 @@ TOOLS_PATH = ./tools/
 
 WEB_PUBLIC_PATH = ./web/public/
 
-EXEC = $(TOOLS_PATH)moviedb_wrapper.native $(TOOLS_PATH)moviedb_to_w2wt.native $(TOOLS_PATH)learn.native $(TOOLS_PATH)all.native $(WEB_PUBLIC_PATH)/w2wt.js
+EXEC = $(TOOLS_PATH)moviedb_wrapper.native $(TOOLS_PATH)moviedb_to_w2wt.native $(TOOLS_PATH)learn.native $(TOOLS_PATH)all.native $(TOOLS_PATH)changes.native $(WEB_PUBLIC_PATH)/w2wt.js
 
 all: lib tools_in web
 
@@ -21,6 +21,7 @@ tools_in: lib
 	@cp $(TOOLS_BUILD_PATH)learning/learn.native $(TOOLS_PATH)learn.native
 	@cp $(TOOLS_BUILD_PATH)all/all.native $(TOOLS_PATH)all.native
 	@cp $(TOOLS_BUILD_PATH)populate/populate.native $(TOOLS_PATH)populate.native
+	@cp $(TOOLS_BUILD_PATH)changes/changes.native $(TOOLS_PATH)changes.native
 
 tools: clean-exec tools_in
 

@@ -1,5 +1,3 @@
-open Moviedb.Fetch
-
 let read_params () =
   if Array.length (Sys.argv) = 1 then begin
     Printf.printf "%s argument required" Sys.argv.(0);
@@ -23,4 +21,4 @@ let read_params () =
 let _ =
   let config = Config.get () in
   let action = read_params () in
-  Lwt_main.run (run config action)
+  Lwt_main.run (Moviedb.Fetch.run config action)
