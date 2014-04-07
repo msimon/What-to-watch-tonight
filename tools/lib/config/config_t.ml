@@ -3,18 +3,18 @@ type database = {
   name: string ;
   collection: string ;
   port: int;
-} deriving (Json_ext)
+} deriving (Yojson)
 
 type learning = {
   mutable alpha : float ;
   lambda : float ;
-} deriving (Json_ext)
+} deriving (Yojson)
 
 type debug = {
   display_retry_after : bool ;
   display_incorrect_response : bool ;
   display_correct_response: bool ;
-} deriving (Json_ext)
+} deriving (Yojson)
 
 type local_configuration = {
   api_url : string ;
@@ -29,4 +29,4 @@ type local_configuration = {
   learning: learning;
   minimal_vote_count: int;
   debug: debug;
-} deriving (Json_ext)
+} deriving (Yojson)

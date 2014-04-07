@@ -7,24 +7,31 @@
 (* let movie_db = (module Db.Movie : Graph_server.Db.Sig with type t = Graph_server.Movie.t and type key = Graph_server.Movie.key) in *)
 (* let genre_db = (module Db.Genre : Graph_server.Db.Sig with type t = Graph_server.Genre.t and type key = Graph_server.Genre.key) in *)
 
-let get_api_movie mongodb id =
+(*
+   should changes add movies ?
+   can movies can be deleted and noted as changed ? where is this action list ?
+*)
+
+let get_and_update_api_movie mongodb id =
   let query = Bson.add_element "id" (Bson.create_int32 (Int32.of_int id)) Bson.empty in
   lwt r = Mongo_lwt.find_q_one mongodb query in
   let d = MongoReply.get_document_list r in
   match d with
     | [] -> Lwt.return None
-    | h::_ -> Lwt.return (Some (Api.Movie.Bson_utils_t.from_bson h))
+    | h::_ ->
+      Lwt.return (Some (Api.Movie.Bson_utils_t.from_bson h))
 
 let apply_change thread_pool mongodb config cs =
   Lwt_list.iter_p (
     fun c ->
       Lwt_pool.use thread_pool (
         fun _ ->
-          match_lwt get_api_movie mongodb c.Api.Movie_changes.id with
+          match_lwt get_and_update_api_movie mongodb c.Api.Movie_changes.id with
             | Some api_m ->
               let id = c.Api.Movie_changes.id in
               lwt new_m = Moviedb.Db_api.fetch_movie config id in
-              let query = Bson.add_element "imdb_uid" (Bson.create_int32 (Int32.of_int id)) Bson.empty in
+             let query = Bson.add_element "imdb_uid" (Bson.create_int32 (Int32.of_int id)) Bson.empty in
+              (* then if it exist, update w2wt, todo this need to be change since movie can be add if they follow some criteria *)
               begin match_lwt Db.Movie.query_one_no_cache query with
                 | Some w2wt_m ->
                   (* missing genre *)

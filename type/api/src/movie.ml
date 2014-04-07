@@ -21,4 +21,4 @@ type t = {
   title: string;
   vote_average: float;
   vote_count: int;
-} deriving (Json_ext, Bson_ext)
+} deriving (Yojson, Bson_ext)

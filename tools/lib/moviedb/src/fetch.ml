@@ -111,7 +111,7 @@ let load_genres config mongodb =
       try
         Lwt.async (fun _ -> Mongo.insert mongodb [ (Api.Genre.Bson_utils_t.to_bson g) ]);
       with exn ->
-        Printf.printf "err insert genres: %s || on %s\n%!" (Printexc.to_string exn) (Json_ext.to_string (Api.Genre.Json_ext_t.to_json g))
+        Printf.printf "err insert genres: %s || on %s\n%!" (Printexc.to_string exn) (Api.Genre.Yojson_t.to_string g)
   ) genres;
 
   Lwt.return_unit

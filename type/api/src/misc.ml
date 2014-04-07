@@ -5,14 +5,14 @@ type image_conf = {
   backdrop_sizes : string list ;
   profile_sizes : string list ;
   logo_sizes : string list ;
-} deriving (Json_ext)
+} deriving (Yojson)
 
 type movidb_configuration = {
   images : image_conf ;
   change_keys : string list ;
-} deriving (Json_ext)
+} deriving (Yojson)
 
 type error = {
   status_code : string ;
   status_message: string ;
-} deriving (Json_ext)
+} deriving (Yojson)

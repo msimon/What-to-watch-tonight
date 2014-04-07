@@ -11,7 +11,7 @@ let _ =
   in
 
   Balsa_config.read_configuration_file config_file;
-  __config := Some (Config_t.Json_utils_local_configuration.of_file config_file)
+  __config := Some (Config_t.Yojson_local_configuration.from_json (Yojson.Safe.from_file config_file))
 
 let cache_lifetime = Balsa_config.get_float "cache.cache_lifetime"
 let cache_size = Balsa_config.get_int "cache.cache_size"

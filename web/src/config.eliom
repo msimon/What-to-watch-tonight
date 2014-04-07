@@ -17,11 +17,11 @@ exception Incorrect_response
     backdrop_sizes : string list ;
     profile_sizes : string list ;
     logo_sizes : string list ;
-  } deriving (Json_ext)
+  } deriving (Yojson)
 
   type themoviedb_conf = {
     images: image_conf
-  } deriving (Json_ext)
+  } deriving (Yojson)
 
 }}
 
@@ -53,7 +53,7 @@ let fetch_moviedb_configuration () =
   in
 
   lwt s = build_url () in
-  Lwt.return (Json_ext_themoviedb_conf.from_json (Json_ext.from_string s))
+  Lwt.return (Yojson_themoviedb_conf.from_string s)
 
 let lazy_config_moviedb = lazy (
   try_lwt

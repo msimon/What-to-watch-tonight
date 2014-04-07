@@ -16,6 +16,10 @@
           Balsa_facebook.load_facebook_sdk (Balsa_config.get_string "fb.app-id")
         );
 
+      let b = Bson.add_element "test" (Bson.create_string "works?") Bson.empty in
+
+      Balsa_log.debug "json: %s" (Bson.to_simple_json b);
+
       Manip.appendToBody (
         div ~a:[ a_class ["full_container"]] [
           div ~a:[ a_class ["fixed_header_hide"]] [];

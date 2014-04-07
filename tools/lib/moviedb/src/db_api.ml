@@ -1,23 +1,22 @@
 let fetch_moviedb_configuration config =
   lwt s = Http.build_url config ~uri:"/3/configuration" in
-  Lwt.return (Api.Misc.Json_ext_movidb_configuration.from_json (Json_ext.from_string s))
+  Lwt.return (Api.Misc.Yojson_movidb_configuration.from_string s)
 
 let fetch_last_movie config =
   lwt s = Http.build_url config ~uri:"/3/movie/latest" in
-  Lwt.return (Api.Movie.Json_ext_t.from_json (Json_ext.from_string s))
+  Lwt.return (Api.Movie.Yojson_t.from_string s)
 
 let fetch_movie_str config uid =
   Http.build_url config ~uri:(Printf.sprintf "/3/movie/%d" uid)
 
-
 let fetch_movie config uid =
   lwt s = fetch_movie_str config uid in
-  let m = Api.Movie.Json_ext_t.from_json (Json_ext.from_string s) in
+  let m = Api.Movie.Yojson_t.from_string s in
   Lwt.return m
 
 let fetch_genres config =
   lwt s = Http.build_url config ~uri:"/3/genre/list" in
-  let g = Api.Genre.Json_ext_genre_list.from_json (Json_ext.from_string s) in
+  let g = Api.Genre.Yojson_genre_list.from_string s in
   Lwt.return g.Api.Genre.genres
 
 let fetch_movie_change ?start_date ?end_date ?page config =
@@ -41,7 +40,7 @@ let fetch_movie_change ?start_date ?end_date ?page config =
   in
 
   lwt s = Http.build_url ~params config ~uri:"/3/movie/changes" in
-  let c = Api.Movie_changes.Json_ext_change_list.from_json (Json_ext.from_string s) in
+  let c = Api.Movie_changes.Yojson_change_list.from_string s in
   Lwt.return c
 
 let movie_pool = ref []
@@ -69,7 +68,7 @@ let insert_movie_async mongodb loop_time threads =
     List.iter (
       fun s ->
         try
-          let m = Api.Movie.Json_ext_t.from_json (Json_ext.from_string s) in
+          let m = Api.Movie.Yojson_t.from_string s in
           Lwt.async (fun _ -> Mongo.insert mongodb [ (Api.Movie.Bson_utils_t.to_bson m) ]);
         with exn ->
           Printf.printf "err insert movie: %s || on %s\n%!" (Printexc.to_string exn) s
